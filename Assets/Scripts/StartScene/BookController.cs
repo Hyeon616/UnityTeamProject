@@ -35,7 +35,7 @@ public class BookController : MonoBehaviour
 
     private void HandleLoginSuccess()
     {
-        // ·Î±×ÀÎ ¼º°ø ½Ã Ã¥À» ¿©´Â µ¿ÀÛ ¼öÇà
+        // ë¡œê·¸ì¸ ì„±ê³µ ì‹œ ì±…ì„ ì—¬ëŠ” ë™ì‘ ìˆ˜í–‰
         if (book.CurrentState == EndlessBook.StateEnum.ClosedFront)
         {
             book.SetState(EndlessBook.StateEnum.OpenMiddle);
@@ -65,10 +65,13 @@ public class BookController : MonoBehaviour
             BookSound(pagingBook);
         }
 
+        // ì±… ë§ˆì§€ë§‰í˜ì´ì§€ í´ë¦­
         if (book.CurrentLeftPageNumber == 7)
         {
             
-            SceneLoader.Instance.LoadSceneAsync("TutorialScene");
+            // íŠœí† ë¦¬ì–¼ Sceneìœ¼ë¡œ ì´ë™
+            // SceneLoader.Instance.LoadSceneAsync("TutorialScene");
+            SceneLoader.Instance.LoadSceneAsync("LobbyScene");
         }
 
     }

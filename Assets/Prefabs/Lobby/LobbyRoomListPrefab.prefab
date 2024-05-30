@@ -367,7 +367,7 @@ MonoBehaviour:
   mapNameText: {fileID: 8641143532028459089}
   titleText: {fileID: 1690618829653706386}
   playerCountText: {fileID: 6817546201587412233}
-  joinButton: {fileID: -2330049459175990650}
+  Button_LobbyRoomListPrefab: {fileID: -2330049459175990650}
 --- !u!114 &4817045643674388229
 MonoBehaviour:
   m_ObjectHideFlags: 0

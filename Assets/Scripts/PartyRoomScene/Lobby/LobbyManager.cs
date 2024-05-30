@@ -21,7 +21,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
     {
         Dictionary<string, PlayerDataObject> playerDataObjects = new Dictionary<string, PlayerDataObject>();
 
-        // √ﬂ∞° µ•¿Ã≈Õ ∞¥√º √ ±‚»≠
+        // Ï∂îÍ∞Ä Îç∞Ïù¥ÌÑ∞ Í∞ùÏ≤¥ Ï¥àÍ∏∞Ìôî
         lobbyData["GameStart"] = new DataObject(DataObject.VisibilityOptions.Member, "false");
         lobbyData["SceneName"] = new DataObject(DataObject.VisibilityOptions.Member, "");
 
@@ -58,7 +58,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
             IsPrivate = false,
             Data = new Dictionary<string, DataObject>
             {
-                // øπ: √ ±‚ µ•¿Ã≈Õ∏¶ º≥¡§«œ∑¡∏È ø©±‚ø° √ﬂ∞°
+                // Ïòà: Ï¥àÍ∏∞ Îç∞Ïù¥ÌÑ∞Î•º ÏÑ§Ï†ïÌïòÎ†§Î©¥ Ïó¨Í∏∞Ïóê Ï∂îÍ∞Ä
                 // { "exampleKey", new DataObject(DataObject.VisibilityOptions.Member, "exampleValue") }
             }
         };
@@ -93,7 +93,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         {
            // Debug.LogError($"Failed to get lobbies: {ex.Message} (Error Code: {ex.ErrorCode})");
 
-            // ∆Ø¡§ ø¿∑˘ ƒ⁄µÂ √≥∏Æ
+            // ÌäπÏ†ï Ïò§Î•ò ÏΩîÎìú Ï≤òÎ¶¨
             if (ex.ErrorCode == 401)
             {
                 Debug.LogError("Unauthorized access - please check your authentication settings.");
@@ -247,21 +247,36 @@ public class LobbyManager : SceneSingleton<LobbyManager>
     {
         try
         {
+            Debug.Log($"Attempting to refresh lobby with ID: {lobbyId}");
             Lobby newLobby = await LobbyService.Instance.GetLobbyAsync(lobbyId);
+            Debug.Log("GetLobbyAsync call completed.");
 
-            if (newLobby != null && newLobby.Data != null && newLobby.LastUpdated > lobby.LastUpdated)
+            if (newLobby == null)
+            {
+                Debug.LogError("Failed to refresh lobby: New lobby is null.");
+                return;
+            }
+
+            if (newLobby.Data == null)
+            {
+                Debug.LogError("Failed to refresh lobby: New lobby data is null.");
+                return;
+            }
+
+            if (newLobby.LastUpdated > lobby.LastUpdated)
             {
                 lobby = newLobby;
                 OnLobbyUpdated?.Invoke(lobby);
+                Debug.Log("Lobby successfully refreshed.");
             }
             else
             {
-                Debug.LogError("Failed to refresh lobby: New lobby or its data is null.");
+                Debug.Log("Lobby data is up-to-date. No need to refresh.");
             }
         }
         catch (LobbyServiceException ex)
         {
-            if (ex.ErrorCode == 16001) // ¡§ºˆ ƒ⁄µÂ∑Œ ∫Ò±≥
+            if (ex.ErrorCode == 16001) // Ï†ïÏàò ÏΩîÎìúÎ°ú ÎπÑÍµê
             {
                 Debug.LogWarning("Lobby not found. It might have been deleted or expired.");
             }
@@ -275,6 +290,8 @@ public class LobbyManager : SceneSingleton<LobbyManager>
             Debug.LogError($"Failed to refresh lobby: {ex.Message}");
         }
     }
+
+
     private bool ValidateLobbyData(Lobby lobby)
     {
         if (lobby == null)

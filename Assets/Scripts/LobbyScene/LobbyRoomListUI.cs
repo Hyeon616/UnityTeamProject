@@ -9,17 +9,16 @@ public class LobbyRoomListUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI mapNameText;
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private TextMeshProUGUI playerCountText;
-    [SerializeField] private Button joinButton;
-
+    [SerializeField] private Button Button_LobbyRoomListPrefab;
 
     private string _lobbyId;
-    private System.Action<string> onJoinRoomCallback;
+    private System.Action<string> onLobbySelected;
 
-    private const string DefaultTitle = "ÆÄÆ¼»ç³É °¡½ÇºÐ";
+    private const string DefaultTitle = "íŒŒí‹°ì‚¬ëƒ¥ ê°€ì‹¤ë¶„";
 
     private void Awake()
     {
-        if (mapNameText == null || titleText == null || playerCountText == null || joinButton == null)
+        if (mapNameText == null || titleText == null || playerCountText == null || Button_LobbyRoomListPrefab == null)
         {
             Debug.LogError("One or more UI components are not assigned.");
             enabled = false;  // Disable this component to prevent further errors.
@@ -55,10 +54,10 @@ public class LobbyRoomListUI : MonoBehaviour
 
         playerCountText.text = $"{lobby.Players.Count}/{lobby.MaxPlayers}";
         _lobbyId = lobby.Id;
-        onJoinRoomCallback = onJoinRoom;
+        onLobbySelected = onJoinRoom;
 
-        joinButton.onClick.RemoveAllListeners();
-        joinButton.onClick.AddListener(OnJoinButtonClicked);
+        Button_LobbyRoomListPrefab.onClick.RemoveAllListeners();
+        Button_LobbyRoomListPrefab.onClick.AddListener(OnLobbyRoomListPrefabClicked);
 
         return true;
     }
@@ -110,8 +109,8 @@ public class LobbyRoomListUI : MonoBehaviour
             DefaultTitle;
     }
 
-    private void OnJoinButtonClicked()
+    private void OnLobbyRoomListPrefabClicked()
     {
-        onJoinRoomCallback?.Invoke(_lobbyId);
+        onLobbySelected?.Invoke(_lobbyId);
     }
 }

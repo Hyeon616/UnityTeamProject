@@ -64,7 +64,7 @@ public class UserData : Singleton<UserData>
     public async Task<string> LoadPlayerNameFromServer(string playerId)
     {
         CharacterData characterData = await LoadPlayerDataFromDatabase(playerId);
-        return characterData?.PlayerName;
+        return characterData?.PlayerName ?? "NoName Player";
     }
 
     public async Task LoadPlayerDataFromServer(string playerId)

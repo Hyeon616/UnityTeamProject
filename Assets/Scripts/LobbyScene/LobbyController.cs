@@ -2,11 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TMPro;
-using Unity.Services.Authentication;
+using Unity.Services.Core;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class LobbyController : MonoBehaviour
@@ -75,11 +74,12 @@ public class LobbyController : MonoBehaviour
     [SerializeField] private GameObject LobbyPlayerNamePrefab;
     [SerializeField] private Button leaveRoomButton;
     [SerializeField] private Button startSceneButton;
-
+    [SerializeField] private Button Button_JoinRoom;
 
 
     private string selectedLobbyId;
     private int currentMapIndex = 0;
+
     private void OnEnable()
     {
 
@@ -101,8 +101,8 @@ public class LobbyController : MonoBehaviour
 
         // GameStartUI
         AddListener(closeGameStartUIButton, OnClickGameStartExit);
-        AddListener(createRoomButton, OnCreateRoom);
-        AddListener(joinRoomButton, OnJoinRoom);
+        AddListener(createRoomButton, OnClickedCreateRoomUIButton);
+        AddListener(joinRoomButton, OnClickedJoinRoomUIButton);
 
         // Lobby
         AddListener(backToGameStart, BackToGameStartUI);
@@ -137,7 +137,7 @@ public class LobbyController : MonoBehaviour
         AddListener(rightButton, OnRightButtonClicked);
 
         // Room
-        AddListener(leaveRoomButton, OnLeaveRoom);
+        AddListener(leaveRoomButton, OnClickedLeaveRoomButton);
         AddListener(startSceneButton, OnStartGame);
 
 
@@ -150,8 +150,8 @@ public class LobbyController : MonoBehaviour
 
         // GameStartUI
         RemoveListener(closeGameStartUIButton, OnClickGameStartExit);
-        RemoveListener(createRoomButton, OnCreateRoom);
-        RemoveListener(joinRoomButton, OnJoinRoom);
+        RemoveListener(createRoomButton, OnClickedCreateRoomUIButton);
+        RemoveListener(joinRoomButton, OnClickedJoinRoomUIButton);
 
         // Lobby
         RemoveListener(backToGameStart, BackToGameStartUI);
@@ -186,7 +186,7 @@ public class LobbyController : MonoBehaviour
         RemoveListener(rightButton, OnRightButtonClicked);
 
         // Room
-        RemoveListener(leaveRoomButton, OnLeaveRoom);
+        RemoveListener(leaveRoomButton, OnClickedLeaveRoomButton);
         RemoveListener(startSceneButton, OnStartGame);
 
 
@@ -410,6 +410,7 @@ public class LobbyController : MonoBehaviour
     private async void Start()
     {
         await RefreshLobbyList();
+        await RefreshPlayerList();
     }
     #region Player Info
     private void ChangePlayerNameToPlayerID()
@@ -429,7 +430,7 @@ public class LobbyController : MonoBehaviour
     #endregion
 
     #region Lobby Management
-    private void OnCreateRoom()
+    private void OnClickedCreateRoomUIButton()
     {
         createRoomButton.gameObject.SetActive(false);
         joinRoomButton.gameObject.SetActive(false);
@@ -438,7 +439,7 @@ public class LobbyController : MonoBehaviour
         startSceneButton.gameObject.SetActive(true);
     }
 
-    private async void OnJoinRoom()
+    private async void OnClickedJoinRoomUIButton()
     {
         createRoomButton.gameObject.SetActive(false);
         joinRoomButton.gameObject.SetActive(false);
@@ -446,9 +447,10 @@ public class LobbyController : MonoBehaviour
         backToGameStart.gameObject.SetActive(true);
         startSceneButton.gameObject.SetActive(false);
         await RefreshLobbyList();
+        await RefreshPlayerList();
     }
 
-    private async void OnLeaveRoom()
+    private async void OnClickedLeaveRoomButton()
     {
         backToGameStart.gameObject.SetActive(true);
         closeGameStartUIButton.gameObject.SetActive(true);
@@ -463,10 +465,11 @@ public class LobbyController : MonoBehaviour
 
                 if (success)
                 {
-                    await RefreshLobbyList();
+                    
                     ClearPlayerListUI();
                     UpdateUIAfterLeavingRoom();
-
+                    await RefreshLobbyList();
+                    await RefreshPlayerList();
                     Debug.Log("Room left successfully.");
                 }
                 else
@@ -533,6 +536,7 @@ public class LobbyController : MonoBehaviour
             Debug.Log("Room created successfully.");
             UpdateUIAfterRoomCreation();
             await RefreshLobbyList();
+            await RefreshPlayerList();
         }
         else
         {
@@ -552,46 +556,10 @@ public class LobbyController : MonoBehaviour
         }
     }
 
-    private async Task RefreshLobbyList()
-    {
-        try
-        {
-            var lobbies = await LobbyManager.Instance.GetLobbies();
-
-            // 현재 UI 요소가 파괴되지 않았는지 확인합니다.
-            if (LobbyRoomListContent != null)
-            {
-                foreach (Transform child in LobbyRoomListContent)
-                {
-                    if (child != null)
-                    {
-                        Destroy(child.gameObject);
-                    }
-                }
-
-                foreach (var lobby in lobbies)
-                {
-                    if (LobbyRoomListContent != null)
-                    {
-                        GameObject lobbyItem = Instantiate(LobbyRoomListPrefab, LobbyRoomListContent);
-                        var lobbyRoomListUI = lobbyItem.GetComponent<LobbyRoomListUI>();
-                        await lobbyRoomListUI.Initialize(lobby, JoinLobby, lobbyRoomCodeInputField.GetComponent<TMP_InputFieldManager>().GetHiddenTitleText());
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogWarning("LobbyRoomListContent is null. Cannot refresh lobby list.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Failed to refresh lobby list: {ex.Message}");
-        }
-    }
 
 
-    private async void JoinLobby(string lobbyId)
+
+    private async Task JoinLobby(string lobbyId)
     {
         Debug.Log($"Joining lobby with ID: {lobbyId}");
 
@@ -599,6 +567,7 @@ public class LobbyController : MonoBehaviour
         if (success)
         {
             Debug.Log("Room joined successfully.");
+            await RefreshPlayerList();
             // 추가적인 로직을 여기서 처리합니다. 예를 들어, 로비 UI 업데이트 또는 씬 전환
         }
         else
@@ -606,6 +575,7 @@ public class LobbyController : MonoBehaviour
             Debug.LogError("Failed to join room.");
         }
     }
+
     private void UpdateUIAfterRoomCreation()
     {
         JoinMenuUI.SetActive(false);
@@ -618,32 +588,55 @@ public class LobbyController : MonoBehaviour
     private void SelectLobby(string lobbyId)
     {
         selectedLobbyId = lobbyId;
+        DisplayPlayerList(lobbyId);
     }
 
+    // 방 참가
     private async void JoinRoomButtonClicked()
     {
-        Debug.Log("Joining room...");
-        await RefreshLobbyList();
+        if (string.IsNullOrEmpty(selectedLobbyId))
+        {
+            Debug.LogWarning("No lobby selected to join.");
+            return;
+        }
+
+        await JoinLobby(selectedLobbyId);
     }
 
     private async void DisplayPlayerList(string lobbyId)
     {
         try
         {
+            Debug.Log($"Attempting to retrieve lobby with ID: {lobbyId}");
             Lobby selectedLobby = await LobbyService.Instance.GetLobbyAsync(lobbyId);
+            Debug.Log("Lobby retrieved successfully");
 
-            foreach (Transform child in LobbyRoomPlayerListContent)
+            if (LobbyRoomPlayerListContent != null)
             {
-                Destroy(child.gameObject);
-            }
+                foreach (Transform child in LobbyRoomPlayerListContent)
+                {
+                    Destroy(child.gameObject);
+                }
 
-            foreach (var player in selectedLobby.Players)
-            {
-                string playerName = await GetPlayerName(player.Id);
-                GameObject playerItem = Instantiate(LobbyPlayerNamePrefab, LobbyRoomPlayerListContent);
-                var playerNameUI = playerItem.GetComponent<LobbyPlayerListUI>();
-                playerNameUI.Initialize(playerName);
+                foreach (var player in selectedLobby.Players)
+                {
+                    Debug.Log($"Fetching player name for player ID: {player.Id}");
+                    string playerName = await GetPlayerName(player.Id);
+                    Debug.Log($"Player name for player ID: {player.Id} is {playerName}");
+
+                    GameObject playerItem = Instantiate(LobbyPlayerNamePrefab, LobbyRoomPlayerListContent);
+                    var playerNameUI = playerItem.GetComponent<LobbyPlayerListUI>();
+                    playerNameUI.Initialize(playerName);
+                }
             }
+            else
+            {
+                Debug.LogWarning("LobbyRoomPlayerListContent is null. Cannot display player list.");
+            }
+        }
+        catch (RequestFailedException ex)
+        {
+            Debug.LogError($"Failed to display player list: {ex.Message} (Error Code: {ex.ErrorCode})");
         }
         catch (Exception ex)
         {
@@ -653,18 +646,30 @@ public class LobbyController : MonoBehaviour
 
     private async Task<string> GetPlayerName(string playerId)
     {
-        Debug.Log($"Fetching player name for player ID: {playerId}");
-
-        await UserData.Instance.LoadPlayerDataFromServer(playerId);
-
-        if (UserData.Instance.Character != null)
+        try
         {
-            Debug.Log($"Player name fetched: {UserData.Instance.Character.PlayerName}");
-            return UserData.Instance.Character.PlayerName;
+            Debug.Log($"Fetching player name for player ID: {playerId}");
+            await UserData.Instance.LoadPlayerDataFromServer(playerId);
+
+            if (UserData.Instance.Character != null)
+            {
+                Debug.Log($"Player name fetched: {UserData.Instance.Character.PlayerName}");
+                return UserData.Instance.Character.PlayerName;
+            }
+            else
+            {
+                Debug.LogWarning($"Character data is null for player ID: {playerId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            //TODO Exception occurred while fetching player name for player ID: DALcB5VNDA60HBMfRDBoBgEdKHFc. Exception: HTTP/1.1 500 Internal Server Error
+            // 플레이어 이름이 제대로 나오지 않는 현상
+            // 입장 버튼 추가
+            Debug.LogError($"Exception occurred while fetching player name for player ID: {playerId}. Exception: {ex.Message}");
         }
 
-        Debug.LogError("Failed to fetch player name, returning 'Unknown'");
-        return "Unknown";
+        return "Unknown"; // 기본값
     }
     #endregion
 
@@ -759,6 +764,7 @@ public class LobbyController : MonoBehaviour
         }
     }
 
+    // 동기화 되며 넘어가는 씬
     private async void OnStartGame()
     {
 
@@ -936,7 +942,7 @@ public class LobbyController : MonoBehaviour
 
         var playerData = new Dictionary<string, PlayerDataObject>
         {
-            // 필요한 플레이어 데이터를 여기에 추가합니다. 예: {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "PlayerName")}
+            { "PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "PlayerName") }
         };
 
         bool success = await LobbyManager.Instance.JoinLobby(selectedLobbyId, playerData);
@@ -950,30 +956,111 @@ public class LobbyController : MonoBehaviour
             Debug.LogError("Failed to join room.");
         }
     }
-
-    private async Task RefreshPlayerList()
+    private async Task RefreshLobbyList()
     {
-        foreach (Transform child in LobbyRoomPlayerListContent)
+        try
         {
-            if (child != null)
-            {
-                Destroy(child.gameObject);
-            }
-        }
+            var lobbies = await LobbyManager.Instance.GetLobbies();
 
-        foreach (var player in LobbyManager.Instance.lobby.Players)
-        {
-            if (LobbyRoomPlayerListContent != null)
+            // 현재 UI 요소가 파괴되지 않았는지 확인합니다.
+            if (LobbyRoomListContent != null)
             {
-                GameObject playerItem = Instantiate(LobbyPlayerNamePrefab, LobbyRoomPlayerListContent);
-                var playerUI = playerItem.GetComponent<LobbyPlayerListUI>();
-                string playerName = await UserData.Instance.LoadPlayerNameFromServer(player.Id);
-                playerUI.Initialize(playerName);
+                foreach (Transform child in LobbyRoomListContent)
+                {
+                    if (child != null)
+                    {
+                        Destroy(child.gameObject);
+                    }
+                }
+
+                foreach (var lobby in lobbies)
+                {
+                    if (LobbyRoomListContent != null)
+                    {
+                        GameObject lobbyItem = Instantiate(LobbyRoomListPrefab, LobbyRoomListContent);
+                        var lobbyRoomListUI = lobbyItem.GetComponent<LobbyRoomListUI>();
+                        await lobbyRoomListUI.Initialize(lobby, SelectLobby, lobbyRoomCodeInputField.GetComponent<TMP_InputFieldManager>().GetHiddenTitleText());
+                    }
+                }
             }
             else
             {
-                Debug.LogWarning("LobbyRoomPlayerListContent is null while refreshing player list.");
+                Debug.LogWarning("LobbyRoomListContent is null. Cannot refresh lobby list.");
             }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Failed to refresh lobby list: {ex.Message}");
+        }
+    }
+    private async Task RefreshPlayerList()
+    {
+        if (LobbyRoomPlayerListContent == null)
+        {
+            Debug.LogWarning("LobbyRoomPlayerListContent is null. Cannot refresh player list.");
+            return;
+        }
+
+        try
+        {
+            var lobby = LobbyManager.Instance.lobby;
+            if (lobby == null)
+            {
+                Debug.LogWarning("LobbyManager.Instance.lobby is null. Cannot refresh player list.");
+                return;
+            }
+
+            var players = lobby.Players;
+            if (players == null)
+            {
+                Debug.LogWarning("Lobby players list is null. Cannot refresh player list.");
+                return;
+            }
+
+            foreach (Transform child in LobbyRoomPlayerListContent)
+            {
+                if (child != null)
+                {
+                    Destroy(child.gameObject);
+                }
+            }
+
+            foreach (var player in players)
+            {
+                if (LobbyRoomPlayerListContent != null)
+                {
+                    GameObject playerItem = Instantiate(LobbyPlayerNamePrefab, LobbyRoomPlayerListContent);
+                    var playerUI = playerItem.GetComponent<LobbyPlayerListUI>();
+
+                    if (playerUI == null)
+                    {
+                        Debug.LogError("LobbyPlayerListUI component is missing in the instantiated player item.");
+                        continue;
+                    }
+
+                    string playerName;
+                    try
+                    {
+                        playerName = await UserData.Instance.LoadPlayerNameFromServer(player.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($"Failed to load player name from server: {ex.Message}");
+                        playerName = "NoName Player"; // 기본값 설정
+                    }
+
+                    Debug.Log("플레이어아이디: " + player.Id);
+                    playerUI.Initialize(playerName);
+                }
+                else
+                {
+                    Debug.LogWarning("LobbyRoomPlayerListContent became null while refreshing player list.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Failed to refresh player list: {ex.Message}");
         }
     }
 

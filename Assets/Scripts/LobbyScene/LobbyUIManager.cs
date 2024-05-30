@@ -36,7 +36,7 @@ public class LobbyUIManager : MonoBehaviour
     //    Dictionary<string, string> lobbyData = new Dictionary<string, string>()
     //{
     //    { "MapIndex", $"{LobbyController.currentMapIndex}" }, // Set a default MapIndex
-    //    { "SceneName", "ÆÄÆ¼»ç³É ÇÏ½ÇºĞ" } // Set a default SceneName
+    //    { "SceneName", "íŒŒí‹°ì‚¬ëƒ¥ í•˜ì‹¤ë¶„" } // Set a default SceneName
     //};
 
     //    bool success = await LobbyManager.Instance.CreateLobby(3, false, new Dictionary<string, string>(), lobbyData);
@@ -59,7 +59,7 @@ public class LobbyUIManager : MonoBehaviour
     }
     private void OnClickedStartRoom()
     {
-        // Lobby ¹æÀÇ ÀÎ¿øµé ¸ğµÎ Scene ÀÌµ¿
+        // Lobby ë°©ì˜ ì¸ì›ë“¤ ëª¨ë‘ Scene ì´ë™
     }
    
 
