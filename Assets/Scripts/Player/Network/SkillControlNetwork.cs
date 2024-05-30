@@ -1,41 +1,26 @@
 using System.Collections;
 using TMPro;
-using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class SkillControlNetwork : NetworkBehaviour
+public class SkillControlNetwork : MonoBehaviour
 {
-    //ºñÈ°¼ºÈ­ ¿¬Ãâ¿¡ »ç¿ëµÉ ÀÌ¹ÌÁö¸¦ Å¸³ª³»°Å³ª ¼û°ÜÁÖ±â À§ÇØ °ÔÀÓ¿ÀºêÁ§Æ® ¸¸µë
+    //ë¹„í™œì„±í™” ì—°ì¶œì— ì‚¬ìš©ë  ì´ë¯¸ì§€ë¥¼ íƒ€ë‚˜ë‚´ê±°ë‚˜ ìˆ¨ê²¨ì£¼ê¸° ìœ„í•´ ê²Œì„ì˜¤ë¸Œì íŠ¸ ë§Œë“¬
     public GameObject[] hideSkillButtons;
 
-    //TextPro°¡ Ã³À½¿¡´Â ºñÈ°¼ºÈ­ µÇ¾î ÀÖ¾î¼­ ¹Ù·Î ÄÄÆ÷³ÍÆ®¸¦ °¡Á®¿Ã ¼ö ¾ø¾î¼­ °ÔÀÓ¿ÀºêÁ§Æ®¸¦ ¸¸µé°í textprosÀÛ¼º
+    //TextProê°€ ì²˜ìŒì—ëŠ” ë¹„í™œì„±í™” ë˜ì–´ ìˆì–´ì„œ ë°”ë¡œ ì»´í¬ë„ŒíŠ¸ë¥¼ ê°€ì ¸ì˜¬ ìˆ˜ ì—†ì–´ì„œ ê²Œì„ì˜¤ë¸Œì íŠ¸ë¥¼ ë§Œë“¤ê³  textprosì‘ì„±
     public GameObject[] textPros;
     public TextMeshProUGUI[] hideSkillTimeTexts;
     public Image[] hideSkillImages;
     NetworkPlayerController playerSkill;
 
-    //½ºÅ³ »ç¿ëÁßÀÎÁö 
+    //ìŠ¤í‚¬ ì‚¬ìš©ì¤‘ì¸ì§€ 
     public bool[] isHideSkills = { false, false, false, false };
 
     public float[] skillTimes = { 2, 4, 4, 0 };
     public float[] getSkillTimes = { 0, 0, 0, 0, };
 
-    public override void OnNetworkSpawn()
-    {
-        if (IsLocalPlayer)
-        {
-            playerSkill = transform.root.GetComponent<NetworkPlayerController>();
-
-            for (int i = 0; i < textPros.Length; i++)
-            {
-                hideSkillTimeTexts[i] = textPros[i].GetComponent<TextMeshProUGUI>();
-                hideSkillButtons[i].SetActive(false);
-            }
-        }
-
-    }
-
+    
 
     void Update()
     {
@@ -44,25 +29,20 @@ public class SkillControlNetwork : NetworkBehaviour
 
     public void HideSkillSetting(int skillNum)
     {
-        if (!isHideSkills[skillNum])
-        {
-            if (IsServer)
-            {
-                HandleSkillActivation(skillNum);
-            }
-            else
-            {
-                HandleSkillActivationServerRpc(skillNum);
-            }
-        }
+        //if (!isHideSkills[skillNum])
+        //{
+        //    if (IsServer)
+        //    {
+        //        HandleSkillActivation(skillNum);
+        //    }
+        //    else
+        //    {
+        //        HandleSkillActivationServerRpc(skillNum);
+        //    }
+        //}
         
     }
     
-    [ServerRpc]
-    private void HandleSkillActivationServerRpc(int skillNum)
-    {
-        HandleSkillActivation(skillNum);
-    }
 
     private void HandleSkillActivation(int skillNum)
     {
@@ -133,43 +113,4 @@ public class SkillControlNetwork : NetworkBehaviour
         isHideSkills[skillNum] = true;
     }
     
-    [ServerRpc]
-    private void DashServerRPC(ServerRpcParams rpcParams = default)
-    {
-        if (!isHideSkills[0])
-        {
-            playerSkill.Dash();
-            HideSkillServerSide(0);
-        }
-    }
-
-    [ServerRpc]
-    private void SkillAServerRPC(ServerRpcParams rpcParams = default)
-    {
-        if (!isHideSkills[1])
-        {
-            playerSkill.SkillA();
-            HideSkillServerSide(1);
-        }
-    }
-
-    [ServerRpc]
-    private void SkillBServerRPC(ServerRpcParams rpcParams = default)
-    {
-        if (!isHideSkills[2])
-        {
-            playerSkill.SkillB();
-            HideSkillServerSide(2);
-        }
-    }
-
-    [ServerRpc]
-    private void SkillClickServerRPC(ServerRpcParams rpcParams = default)
-    {
-        if (!isHideSkills[3])
-        {
-            playerSkill.SkillClick();
-            HideSkillServerSide(3);
-        }
-    }
 }

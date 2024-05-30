@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using UnityEngine;
@@ -7,52 +8,41 @@ using UnityEngine.SceneManagement;
 public class Init : MonoBehaviour
 {
 
+    public static bool IsAuthenticated { get; private set; }
+
     async void Start()
+    {
+        await InitializeServices();
+    }
+
+    private async Task InitializeServices()
     {
         try
         {
             await UnityServices.InitializeAsync();
+            Debug.Log("Unity Services Initialized");
 
-            if (UnityServices.State == ServicesInitializationState.Initialized)
+            if (AuthenticationService.Instance.IsSignedIn)
             {
-                AuthenticationService.Instance.SignedIn += OnSignedIn;
-                await AuthenticationService.Instance.SignInAnonymouslyAsync();
-
-                if (AuthenticationService.Instance.IsSignedIn)
-                {
-                    // 사용자 이름 초기화
-                    InitializeUserName();
-                }
+                Debug.Log("Already signed in.");
             }
-        }
-        catch (Exception ex)
-        {
-            Debug.Log($"플레이어 정보 초기화 실패 : {ex.Message}");
-        }
+            else
+            {
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                Debug.Log($"Signed in: {AuthenticationService.Instance.PlayerId}");
+            }
 
-    }
-    private void OnDisable()
-    {
-        if (AuthenticationService.Instance != null)
-        {
-            AuthenticationService.Instance.SignedIn -= OnSignedIn;
+            IsAuthenticated = AuthenticationService.Instance.IsSignedIn;
+            Debug.Log($"Authentication Status: {IsAuthenticated}");
         }
-    }
-
-    private void InitializeUserName()
-    {
-        string userName = PlayerPrefs.GetString("Username");
-        if (string.IsNullOrEmpty(userName))
+        catch (AuthenticationException ex)
         {
-            userName = "Player";
-            PlayerPrefs.SetString("Username", userName);
+            Debug.LogError($"AuthenticationException: {ex.Message}");
         }
-    }
-
-    private void OnSignedIn()
-    {
-        Debug.Log($"Player Id : {AuthenticationService.Instance.PlayerId}");
-        Debug.Log($"Token : {AuthenticationService.Instance.AccessToken}");
+        catch (RequestFailedException ex)
+        {
+            Debug.LogError($"RequestFailedException: {ex.Message}");
+        }
     }
 
 }

@@ -1,12 +1,11 @@
 using Cinemachine;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using static DataManager;
 
-public class NetworkPlayerController : NetworkBehaviour
+public class NetworkPlayerController : MonoBehaviour
 {
     public GameObject skillControlObject;
     public SkillControlNetwork skill;
@@ -41,14 +40,7 @@ public class NetworkPlayerController : NetworkBehaviour
 
     private CinemachineVirtualCamera virtualCamera;
 
-    [SerializeField]
-    private Vector2 defaultInitialPlanePosition = new Vector2(-14, -19);
-    [SerializeField]
-    private NetworkVariable<Vector3> networkPosition = new NetworkVariable<Vector3>();
-
-    [SerializeField]
-    private NetworkVariable<Quaternion> networkRotation = new NetworkVariable<Quaternion>();
-
+    
     [SerializeField]
     private float speed = 3.5f;
 
@@ -70,92 +62,26 @@ public class NetworkPlayerController : NetworkBehaviour
 
     private void Start()
     {
-        if (IsClient && IsOwner)
-        {
-            if (transform.Find("EffectParents").gameObject != null)
-            {
-                attack = transform.Find("EffectParents").gameObject; // �� �÷��̾� ������Ʈ ������ ����Ʈ �θ� ������Ʈ�� ã���ϴ�.
-            }
-            if (skillControlObject != null)
-            {
-                skill = skillControlObject.GetComponent<SkillControlNetwork>();
-            }
-            // ��ų ��ٿ��� �����ϴ� �ڷ�ƾ ����
-            StartCoroutine(SkillCooldown());
-        }
+        //if (IsClient && IsOwner)
+        //{
+        //    if (transform.Find("EffectParents").gameObject != null)
+        //    {
+        //        attack = transform.Find("EffectParents").gameObject; // �� �÷��̾� ������Ʈ ������ ����Ʈ �θ� ������Ʈ�� ã���ϴ�.
+        //    }
+        //    if (skillControlObject != null)
+        //    {
+        //        skill = skillControlObject.GetComponent<SkillControlNetwork>();
+        //    }
+        //    // ��ų ��ٿ��� �����ϴ� �ڷ�ƾ ����
+        //    StartCoroutine(SkillCooldown());
+        //}
     }
     void Update()
     {
-        if (IsClient && IsOwner)
-        {
-            MoveClient();
-            HandleInput();
-        }
-        ApplyGravity();
-
-        if (IsServer)
-        {
-            _characterController.SimpleMove(networkPosition.Value);
-            if (networkRotation.Value != Quaternion.identity)
-            {
-                transform.rotation = networkRotation.Value;
-            }
-        }
-        
-    }
-
-    public override void OnNetworkSpawn()
-    {
-        
-
-        if (IsLocalPlayer)
-        {
-
-            MyObjectName = gameObject.name;          // �÷��̾� ������Ʈ�� �̸� ��������
-                                                     // DataManager�� ����Ͽ� �÷��̾� ������ ��������
-
-            virtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
-
-            if (virtualCamera != null)
-            {
-                // Virtual Camera�� Follow �� Look At �ʵ带 ���� �÷��̾�� �����մϴ�
-                virtualCamera.Follow = transform;
-            }
-        }
-
-    }
-
-    void MoveClient() // Ŭ���̾�Ʈ���� �̵� ó��
-    {
-
-        Vector3 movementInput = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
-
-        if (movementInput.sqrMagnitude > 0.01f) // movementInput�� 0���� Ȯ��
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(movementInput);
-
-            if (oldInputPosition != movementInput || oldInputRotation != targetRotation)
-            {
-                oldInputRotation = targetRotation;
-                oldInputPosition = movementInput;
-                MoveServerRPC(movementInput * speed, targetRotation);
-
-                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
-                _animator.SetBool("isRunning", true);
-            }
-        }
-        else if (oldInputPosition != Vector3.zero)
-        {
-            oldInputPosition = Vector3.zero;
-            MoveServerRPC(Vector3.zero, Quaternion.identity);
-            _animator.SetBool("isRunning", false);
-        }
-
+       
     }
 
 
-
-    // ��ų ��ٿ��� �����ϴ� �ڷ�ƾ
     IEnumerator SkillCooldown()
     {
         while (true)
@@ -187,35 +113,35 @@ public class NetworkPlayerController : NetworkBehaviour
     //    _str = playerData.str;
     //}
 
-    private void HandleInput()
-    {
-        if (Input.GetKeyDown(KeyCode.LeftShift))
-        {
-            if (IsOwner)
-                DashServerRPC();
-        }
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            if (IsOwner)
-                SkillAServerRPC();
-        }
-        if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            if (IsOwner)
-                SkillBServerRPC();
-        }
-        if (Input.GetKeyDown(KeyCode.Mouse0))
-        {
-            if (IsOwner)
-                ClickServerRPC();
-        }
-        if (Input.GetKeyDown(KeyCode.Mouse1))
-        {
-            if (IsOwner)
-                SkillClickServerRPC();
-        }
+    //private void HandleInput()
+    //{
+    //    if (Input.GetKeyDown(KeyCode.LeftShift))
+    //    {
+    //        if (IsOwner)
+    //            DashServerRPC();
+    //    }
+    //    if (Input.GetKeyDown(KeyCode.Alpha1))
+    //    {
+    //        if (IsOwner)
+    //            SkillAServerRPC();
+    //    }
+    //    if (Input.GetKeyDown(KeyCode.Alpha2))
+    //    {
+    //        if (IsOwner)
+    //            SkillBServerRPC();
+    //    }
+    //    if (Input.GetKeyDown(KeyCode.Mouse0))
+    //    {
+    //        if (IsOwner)
+    //            ClickServerRPC();
+    //    }
+    //    if (Input.GetKeyDown(KeyCode.Mouse1))
+    //    {
+    //        if (IsOwner)
+    //            SkillClickServerRPC();
+    //    }
 
-    }
+    //}
 
     // �÷��̾ ���ظ� ���� �� ȣ��Ǵ� �Լ�
 
@@ -392,45 +318,5 @@ public class NetworkPlayerController : NetworkBehaviour
     }
     #endregion
 
-    [ServerRpc]
-    private void MoveServerRPC(Vector3 movementInput, Quaternion rotationInput)
-    {
-
-        networkPosition.Value = movementInput;
-        networkRotation.Value = rotationInput;
-
-    }
-
-    [ServerRpc]
-    private void DashServerRPC()
-    {
-        Dash();
-    }
-
-    [ServerRpc]
-    private void SkillAServerRPC()
-    {
-        SkillA();
-    }
-    [ServerRpc]
-    private void SkillBServerRPC()
-    {
-        SkillB();
-    }
-    [ServerRpc]
-    private void ClickServerRPC()
-    {
-        Click();
-    }
-
-    [ServerRpc]
-    private void SkillClickServerRPC()
-    {
-        SkillClick();
-    }
-    [ServerRpc]
-    private void ApplyGravityServerRPC()
-    {
-        ApplyGravity();
-    }
+    
 }

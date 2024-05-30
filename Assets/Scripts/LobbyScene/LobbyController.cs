@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TMPro;
-using Unity.Netcode;
-using Unity.Netcode.Transports.UTP;
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
@@ -194,7 +192,7 @@ public class LobbyController : MonoBehaviour
 
     }
 
-    #region Listener ÇÔ¼ö
+    #region Listener í•¨ìˆ˜
     private void AddListener(Button button, UnityEngine.Events.UnityAction action)
     {
         if (button != null)
@@ -520,7 +518,7 @@ public class LobbyController : MonoBehaviour
     private async void RoomCodeSubmit()
     {
         Debug.Log("Creating room...");
-        string sceneName = string.IsNullOrEmpty(lobbyRoomCodeInputField.text) ? "ÆÄÆ¼»ç³É ÇÏ½ÇºĞ" : lobbyRoomCodeInputField.text;
+        string sceneName = string.IsNullOrEmpty(lobbyRoomCodeInputField.text) ? "íŒŒí‹°ì‚¬ëƒ¥ í•˜ì‹¤ë¶„" : lobbyRoomCodeInputField.text;
 
         Dictionary<string, DataObject> lobbyData = new Dictionary<string, DataObject>()
     {
@@ -560,7 +558,7 @@ public class LobbyController : MonoBehaviour
         {
             var lobbies = await LobbyManager.Instance.GetLobbies();
 
-            // ÇöÀç UI ¿ä¼Ò°¡ ÆÄ±«µÇÁö ¾Ê¾Ò´ÂÁö È®ÀÎÇÕ´Ï´Ù.
+            // í˜„ì¬ UI ìš”ì†Œê°€ íŒŒê´´ë˜ì§€ ì•Šì•˜ëŠ”ì§€ í™•ì¸í•©ë‹ˆë‹¤.
             if (LobbyRoomListContent != null)
             {
                 foreach (Transform child in LobbyRoomListContent)
@@ -601,7 +599,7 @@ public class LobbyController : MonoBehaviour
         if (success)
         {
             Debug.Log("Room joined successfully.");
-            // Ãß°¡ÀûÀÎ ·ÎÁ÷À» ¿©±â¼­ Ã³¸®ÇÕ´Ï´Ù. ¿¹¸¦ µé¾î, ·Îºñ UI ¾÷µ¥ÀÌÆ® ¶Ç´Â ¾À ÀüÈ¯
+            // ì¶”ê°€ì ì¸ ë¡œì§ì„ ì—¬ê¸°ì„œ ì²˜ë¦¬í•©ë‹ˆë‹¤. ì˜ˆë¥¼ ë“¤ì–´, ë¡œë¹„ UI ì—…ë°ì´íŠ¸ ë˜ëŠ” ì”¬ ì „í™˜
         }
         else
         {
@@ -696,12 +694,12 @@ public class LobbyController : MonoBehaviour
         }
         else
         {
-            currentMapIndex = 0; // Ã³À½À¸·Î µ¹¾Æ°©´Ï´Ù.
+            currentMapIndex = 0; // ì²˜ìŒìœ¼ë¡œ ëŒì•„ê°‘ë‹ˆë‹¤.
         }
 
         UpdateMap();
 
-        // Ãß°¡ÀûÀÎ ÀÛ¾÷ÀÌ ÇÊ¿äÇÏ¸é ¿©±â¼­ Ã³¸®ÇÕ´Ï´Ù.
+        // ì¶”ê°€ì ì¸ ì‘ì—…ì´ í•„ìš”í•˜ë©´ ì—¬ê¸°ì„œ ì²˜ë¦¬í•©ë‹ˆë‹¤.
         Debug.Log($"Selected map index: {currentMapIndex}, scene name: {mapSelectionData.Maps[currentMapIndex].SceneName}");
     }
 
@@ -792,7 +790,7 @@ public class LobbyController : MonoBehaviour
         //        {
         //            Debug.Log("Host started successfully.");
 
-        //            // Scene ÀüÈ¯ ÇÃ·¡±× ¼³Á¤
+        //            // Scene ì „í™˜ í”Œë˜ê·¸ ì„¤ì •
         //            string sceneName = mapSelectionData.Maps[currentMapIndex].SceneName;
         //            bool flagSet = await LobbyManager.Instance.SetGameStartFlag(sceneName);
         //            if (flagSet)
@@ -839,12 +837,12 @@ public class LobbyController : MonoBehaviour
 
         Debug.Log("Starting game...");
 
-        // ½Ì±Û ÇÃ·¹ÀÌ¾î ¸ğµå¿¡¼­´Â ³×Æ®¿öÅ© °ü·Ã ÄÚµå¸¦ ¸ğµÎ Á¦°ÅÇÕ´Ï´Ù.
+        // ì‹±ê¸€ í”Œë ˆì´ì–´ ëª¨ë“œì—ì„œëŠ” ë„¤íŠ¸ì›Œí¬ ê´€ë ¨ ì½”ë“œë¥¼ ëª¨ë‘ ì œê±°í•©ë‹ˆë‹¤.
 
-        // ¾À ÀÌ¸§À» mapSelectionData¿¡¼­ °¡Á®¿É´Ï´Ù.
+        // ì”¬ ì´ë¦„ì„ mapSelectionDataì—ì„œ ê°€ì ¸ì˜µë‹ˆë‹¤.
         string sceneName = mapSelectionData.Maps[currentMapIndex].SceneName;
 
-        // °ÔÀÓ ¾ÀÀ» ·ÎµåÇÕ´Ï´Ù.
+        // ê²Œì„ ì”¬ì„ ë¡œë“œí•©ë‹ˆë‹¤.
         LoadGameScene(sceneName);
     }
 
@@ -894,42 +892,42 @@ public class LobbyController : MonoBehaviour
     }
 
 
-    private async Task StartHost()
-    {
-        string joinCode = await RelayManager.Instance.CreateRelay(3);
-        if (!string.IsNullOrEmpty(joinCode))
-        {
-            Debug.Log($"Relay server created. Join code: {joinCode}");
-            var (allocationId, key, connectionData, dtlsAddress, dtlsPort) = RelayManager.Instance.GetHostConnectionInfo();
+    //private async Task StartHost()
+    //{
+    //    string joinCode = await RelayManager.Instance.CreateRelay(3);
+    //    if (!string.IsNullOrEmpty(joinCode))
+    //    {
+    //        Debug.Log($"Relay server created. Join code: {joinCode}");
+    //        var (allocationId, key, connectionData, dtlsAddress, dtlsPort) = RelayManager.Instance.GetHostConnectionInfo();
 
-            UnityTransport transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-            transport.SetHostRelayData(dtlsAddress, (ushort)dtlsPort, allocationId, key, connectionData, true);
+    //        UnityTransport transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+    //        transport.SetHostRelayData(dtlsAddress, (ushort)dtlsPort, allocationId, key, connectionData, true);
 
-            NetworkManager.Singleton.StartHost();
-        }
-        else
-        {
-            Debug.LogError("Failed to create relay.");
-        }
-    }
+    //        NetworkManager.Singleton.StartHost();
+    //    }
+    //    else
+    //    {
+    //        Debug.LogError("Failed to create relay.");
+    //    }
+    //}
 
-    private async Task JoinHost(string joinCode)
-    {
-        bool success = await RelayManager.Instance.JoinRelay(joinCode);
-        if (success)
-        {
-            var (allocationId, key, connectionData, hostConnectionData, dtlsAddress, dtlsPort) = RelayManager.Instance.GetClientConnectionInfo();
+    //private async Task JoinHost(string joinCode)
+    //{
+    //    bool success = await RelayManager.Instance.JoinRelay(joinCode);
+    //    if (success)
+    //    {
+    //        var (allocationId, key, connectionData, hostConnectionData, dtlsAddress, dtlsPort) = RelayManager.Instance.GetClientConnectionInfo();
 
-            UnityTransport transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-            transport.SetClientRelayData(dtlsAddress, (ushort)dtlsPort, allocationId, key, connectionData, hostConnectionData, true);
+    //        UnityTransport transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+    //        transport.SetClientRelayData(dtlsAddress, (ushort)dtlsPort, allocationId, key, connectionData, hostConnectionData, true);
 
-            NetworkManager.Singleton.StartClient();
-        }
-        else
-        {
-            Debug.LogError("Failed to join relay.");
-        }
-    }
+    //        NetworkManager.Singleton.StartClient();
+    //    }
+    //    else
+    //    {
+    //        Debug.LogError("Failed to join relay.");
+    //    }
+    //}
     #endregion
 
     private async void LobbyRoomConnect()
@@ -938,7 +936,7 @@ public class LobbyController : MonoBehaviour
 
         var playerData = new Dictionary<string, PlayerDataObject>
         {
-            // ÇÊ¿äÇÑ ÇÃ·¹ÀÌ¾î µ¥ÀÌÅÍ¸¦ ¿©±â¿¡ Ãß°¡ÇÕ´Ï´Ù. ¿¹: {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "PlayerName")}
+            // í•„ìš”í•œ í”Œë ˆì´ì–´ ë°ì´í„°ë¥¼ ì—¬ê¸°ì— ì¶”ê°€í•©ë‹ˆë‹¤. ì˜ˆ: {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "PlayerName")}
         };
 
         bool success = await LobbyManager.Instance.JoinLobby(selectedLobbyId, playerData);
