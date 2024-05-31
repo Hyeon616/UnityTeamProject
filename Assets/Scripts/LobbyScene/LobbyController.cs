@@ -139,7 +139,7 @@ public class LobbyController : MonoBehaviour
         // Room
         AddListener(leaveRoomButton, OnClickedLeaveRoomButton);
         AddListener(startSceneButton, OnStartGame);
-
+        AddListener(Button_JoinRoom, JoinRoomButtonClicked);
 
     }
 
@@ -188,7 +188,7 @@ public class LobbyController : MonoBehaviour
         // Room
         RemoveListener(leaveRoomButton, OnClickedLeaveRoomButton);
         RemoveListener(startSceneButton, OnStartGame);
-
+        RemoveListener(Button_JoinRoom, JoinRoomButtonClicked);
 
     }
 
@@ -434,6 +434,7 @@ public class LobbyController : MonoBehaviour
     {
         createRoomButton.gameObject.SetActive(false);
         joinRoomButton.gameObject.SetActive(false);
+        Button_JoinRoom.gameObject.SetActive(false);
         JoinMenuUI.SetActive(true);
         backToGameStart.gameObject.SetActive(true);
         startSceneButton.gameObject.SetActive(true);
@@ -446,6 +447,7 @@ public class LobbyController : MonoBehaviour
         lobbyRoomUI.SetActive(true);
         backToGameStart.gameObject.SetActive(true);
         startSceneButton.gameObject.SetActive(false);
+        Button_JoinRoom.gameObject.SetActive(true);
         await RefreshLobbyList();
         await RefreshPlayerList();
     }
@@ -465,7 +467,7 @@ public class LobbyController : MonoBehaviour
 
                 if (success)
                 {
-                    
+
                     ClearPlayerListUI();
                     UpdateUIAfterLeavingRoom();
                     await RefreshLobbyList();
@@ -512,6 +514,7 @@ public class LobbyController : MonoBehaviour
         JoinMenuUI.SetActive(false);
         lobbyRoomUI.SetActive(false);
         leaveRoomButton.gameObject.SetActive(false);
+        Button_JoinRoom.gameObject.SetActive(false);
         backToGameStart.gameObject.SetActive(true);
         closeGameStartUIButton.gameObject.SetActive(true);
         createRoomButton.gameObject.SetActive(true);
@@ -568,7 +571,8 @@ public class LobbyController : MonoBehaviour
         {
             Debug.Log("Room joined successfully.");
             await RefreshPlayerList();
-            // 추가적인 로직을 여기서 처리합니다. 예를 들어, 로비 UI 업데이트 또는 씬 전환
+
+
         }
         else
         {
@@ -1041,7 +1045,7 @@ public class LobbyController : MonoBehaviour
                     string playerName;
                     try
                     {
-                        playerName = await UserData.Instance.LoadPlayerNameFromServer(player.Id);
+                        playerName = UserData.Instance.Character.PlayerName;
                     }
                     catch (Exception ex)
                     {
