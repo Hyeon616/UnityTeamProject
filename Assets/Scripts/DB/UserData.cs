@@ -22,6 +22,7 @@ public class UserData : Singleton<UserData>
         Debug.Log($"Load Data URL: {LoadDataUrl}");
     }
 
+    
     public void LoadPlayerData(string userId, CharacterData character)
     {
         UserId = userId;
@@ -67,6 +68,8 @@ public class UserData : Singleton<UserData>
         return characterData?.PlayerName ?? "NoName Player";
     }
 
+
+
     public async Task LoadPlayerDataFromServer(string playerId)
     {
         Character = await LoadPlayerDataFromDatabase(playerId);
@@ -74,23 +77,34 @@ public class UserData : Singleton<UserData>
         {
             Debug.Log("Player data loaded successfully.");
         }
+        else
+        {
+            Debug.LogWarning("Failed to load player data. Character data is null.");
+        }
     }
+
+
+
     private async Task<CharacterData> LoadPlayerDataFromDatabase(string playerId)
     {
-        string url = $"{LoadDataUrl}/{playerId}";
+        string url = $"{LoadDataUrl}/ugs/{playerId}"; // URL 경로 변경
 
         using (UnityWebRequest request = UnityWebRequest.Get(url))
         {
+            Debug.Log($"Sending request to URL: {url}");
             await request.SendWebRequestAsync();
 
             if (request.result == UnityWebRequest.Result.Success)
             {
                 string jsonResult = request.downloadHandler.text;
+                Debug.Log($"Received response: {jsonResult}");
                 return JsonUtility.FromJson<CharacterData>(jsonResult);
             }
             else
             {
-                LogError(request, "Error loading player data");
+                Debug.LogError($"Error loading player data: {request.error}");
+                Debug.LogError($"Response Code: {request.responseCode}");
+                Debug.LogError($"Response Text: {request.downloadHandler.text}");
                 return null;
             }
         }

@@ -47,3 +47,10 @@ public class CharacterData
     public int ArmorEnhancement;
 
 }
+
+[Serializable]
+public class SaveUGSPlayerIDRequest
+{
+    public string UserID;
+    public string UGSPlayerID;
+}

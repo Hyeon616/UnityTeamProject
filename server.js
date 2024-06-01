@@ -34,9 +34,7 @@ app.post('/api/register', async (req, res) => {
     try {
         const { Username, Password, PlayerName } = req.body;
 
-        console.log('Starting transaction...');
         await transaction.begin();
-        console.log('Transaction started.');
         let request = new sql.Request(transaction);
 
         // 사용자 아이디 중복 확인
@@ -45,7 +43,6 @@ app.post('/api/register', async (req, res) => {
             .query('SELECT COUNT(*) as count FROM Users WHERE Username = @CheckUsername');
 
         if (userCheck.recordset[0].count > 0) {
-            console.log('Username already exists.');
             await transaction.rollback();
             return res.status(409).json({ errorCode: 'USERNAME_EXISTS', message: 'Username already exists' });
         }
@@ -57,7 +54,6 @@ app.post('/api/register', async (req, res) => {
             .query('SELECT COUNT(*) as count FROM Players WHERE PlayerName = @CheckPlayerName');
 
         if (playerNameCheck.recordset[0].count > 0) {
-            console.log('Player name already exists.');
             await transaction.rollback();
             return res.status(409).json({ errorCode: 'PLAYERNAME_EXISTS', message: 'Player name already exists' });
         }
@@ -80,7 +76,7 @@ app.post('/api/register', async (req, res) => {
         await request
             .input('InsertNewUserID', sql.Int, newUserId)
             .input('InsertPlayerNamePlayer', sql.NVarChar, PlayerName)
-            .input('InsertUsername', sql.NVarChar, Username) 
+            .input('InsertUsername', sql.NVarChar, Username)
             .input('InsertGems', sql.Int, 50)
             .input('InsertCoins', sql.Int, 50)
             .input('InsertMaxHealth', sql.Int, 500)
@@ -96,7 +92,6 @@ app.post('/api/register', async (req, res) => {
 
         // 트랜잭션 커밋
         await transaction.commit();
-        console.log('Transaction committed.');
 
         // 새로 생성된 사용자 정보 반환
         request = new sql.Request();
@@ -124,7 +119,6 @@ app.post('/api/register', async (req, res) => {
         if (transaction._begun) {
             try {
                 await transaction.release();
-                console.log('Transaction released.');
             } catch (releaseErr) {
                 console.error('Release error:', releaseErr);
             }
@@ -141,7 +135,7 @@ app.post('/api/login', async (req, res) => {
         // 사용자 정보 조회
         const userResult = await pool.request()
             .input('LoginUsername', sql.NVarChar, Username)
-            .query('SELECT UserID, Username, PasswordHash, PlayerName FROM Users WHERE Username = @LoginUsername');
+            .query('SELECT UserID, Username, PasswordHash, PlayerName, UGSPlayerID FROM Users WHERE Username = @LoginUsername');
 
         if (userResult.recordset.length === 0) {
             return res.status(404).json({ message: 'Invalid username or password' });
@@ -153,6 +147,17 @@ app.post('/api/login', async (req, res) => {
         const isPasswordValid = await bcrypt.compare(Password, user.PasswordHash);
         if (!isPasswordValid) {
             return res.status(404).json({ message: 'Invalid username or password' });
+        }
+
+        let ugsPlayerID = user.UGSPlayerID;
+
+        // UGS Player ID가 없거나 동일한 경우 새로 생성
+        if (!ugsPlayerID || await isUGSPlayerIDDuplicated(ugsPlayerID, pool)) {
+            ugsPlayerID = generateUGSPlayerID();
+            await pool.request()
+                .input('UserID', sql.Int, user.UserID)
+                .input('UGSPlayerID', sql.NVarChar, ugsPlayerID)
+                .query('UPDATE Players SET UGSPlayerID = @UGSPlayerID WHERE UserID = @UserID');
         }
 
         // 플레이어 정보 조회
@@ -175,7 +180,7 @@ app.post('/api/login', async (req, res) => {
             ArmorEnhancement: player.ArmorEnhancement
         };
 
-        res.status(200).json({ message: 'Login successful', UserId: user.UserID, Character: characterData });
+        res.status(200).json({ message: 'Login successful', UserId: user.UserID, Character: characterData, UGSPlayerID: ugsPlayerID });
     } catch (err) {
         console.error('로그인 오류:', err);
         res.status(500).send('서버 오류');
@@ -224,25 +229,76 @@ app.get('/api/players/:id', async (req, res) => {
 
 
 app.get('/api/players/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    console.log(`Received request for PlayerID: ${id}`);
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input('PlayerID', sql.Int, id)
-      .query('SELECT * FROM Players WHERE PlayerID = @PlayerID');
+    try {
+        const { id } = req.params;
+        console.log(`Received request for UserID: ${id}`); // 디버그 로그 추가
+        const pool = await sql.connect(dbConfig);
 
-    if (result.recordset.length === 0) {
-      console.log('Player not found');
-      return res.status(404).json({ message: 'Player not found' });
+        const result = await pool.request()
+            .input('UserID', sql.Int, id)
+            .query('SELECT * FROM Players WHERE UserID = @UserID');
+
+        if (result.recordset.length === 0) {
+            console.log('Player not found');
+            return res.status(404).json({ message: 'Player not found' });
+        }
+
+        console.log('Player data found:', result.recordset[0]); // 디버그 로그 추가
+        res.json(result.recordset[0]);
+    } catch (err) {
+        console.error('데이터 조회 오류:', err);
+        res.status(500).send('서버 오류');
     }
+});
 
-    console.log('Player data found:', result.recordset[0]);
-    res.json(result.recordset[0]);
-  } catch (err) {
-    console.error('데이터 조회 오류:', err);
-    res.status(500).send('서버 오류');
-  }
+
+app.post('/api/save-ugs-playerid', async (req, res) => {
+    try {
+        const { UserID, UGSPlayerID } = req.body;
+        const pool = await sql.connect(dbConfig);
+
+        await pool.request()
+            .input('UserID', sql.Int, UserID)
+            .input('UGSPlayerID', sql.NVarChar, UGSPlayerID)
+            .query('UPDATE Players SET UGSPlayerID = @UGSPlayerID WHERE UserID = @UserID');
+
+        res.status(200).json({ message: 'UGS Player ID saved successfully' });
+    } catch (err) {
+        console.error('Error saving UGS Player ID:', err);
+        res.status(500).send('Server error');
+    }
+});
+
+app.get('/api/players/ugs/:playerId', async (req, res) => {
+    try {
+        const { playerId } = req.params;
+        const pool = await sql.connect(dbConfig);
+
+        // UGSPlayerID로 Players 테이블에서 UserID 조회
+        const userResult = await pool.request()
+            .input('UGSPlayerID', sql.NVarChar, playerId)
+            .query('SELECT UserID FROM Players WHERE UGSPlayerID = @UGSPlayerID');
+
+        if (userResult.recordset.length === 0) {
+            return res.status(404).json({ message: 'Player not found for given UGS playerId' });
+        }
+
+        const userId = userResult.recordset[0].UserID;
+
+        // UserID로 Players 테이블에서 플레이어 정보 조회
+        const playerResult = await pool.request()
+            .input('UserID', sql.Int, userId)
+            .query('SELECT * FROM Players WHERE UserID = @UserID');
+
+        if (playerResult.recordset.length === 0) {
+            return res.status(404).json({ message: 'Player not found for given UserID' });
+        }
+
+        res.json(playerResult.recordset[0]);
+    } catch (err) {
+        console.error('데이터 조회 오류:', err);
+        res.status(500).send('서버 오류');
+    }
 });
 
 // 특정 플레이어 정보 조회 시 Username 포함 엔드포인트
@@ -400,3 +456,15 @@ app.get('/api/test', (req, res) => {
 app.listen(port, '0.0.0.0', () => {
     console.log(`서버가 http://localhost:${port} 에서 실행 중입니다`);
 });
+
+// UGS Player ID를 생성하는 함수
+function generateUGSPlayerID() {
+    return 'UGS-' + Math.random().toString(36).substr(2, 9);
+}
+
+async function isUGSPlayerIDDuplicated(ugsPlayerID, pool) {
+    const result = await pool.request()
+        .input('UGSPlayerID', sql.NVarChar, ugsPlayerID)
+        .query('SELECT COUNT(*) as count FROM Players WHERE UGSPlayerID = @UGSPlayerID');
+    return result.recordset[0].count > 1;
+}

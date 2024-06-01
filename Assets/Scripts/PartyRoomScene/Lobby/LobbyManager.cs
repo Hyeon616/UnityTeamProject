@@ -7,25 +7,69 @@ using Unity.Services.Core;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public class LobbyManager : SceneSingleton<LobbyManager>
 {
     public Lobby lobby;
+    private Dictionary<string, string> playerNamesCache = new Dictionary<string, string>();
 
     private Coroutine heartbeatCoroutine;
     private Coroutine refreshLobbyCoroutine;
 
     public static event Action<Lobby> OnLobbyUpdated;
-    
+
+    private void Start()
+    {
+        SaveUGSPlayerID(UserData.Instance.UserId, AuthenticationService.Instance.PlayerId);
+    }
+
+    private async void SaveUGSPlayerID(string userId, string ugsPlayerId)
+    {
+        string url = $"{RemoteConfigManager.ServerUrl}/api/save-ugs-playerid";
+        SaveUGSPlayerIDRequest requestBody = new SaveUGSPlayerIDRequest
+        {
+            UserID = userId,
+            UGSPlayerID = ugsPlayerId
+        };
+
+        string jsonData = JsonUtility.ToJson(requestBody);
+
+        using (UnityWebRequest request = new UnityWebRequest(url, "POST"))
+        {
+            byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
+            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            await request.SendWebRequestAsync();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                Debug.Log("UGS Player ID saved successfully");
+            }
+            else
+            {
+                Debug.LogError($"Error saving UGS Player ID: {request.error}");
+            }
+        }
+    }
+
     public async Task<Lobby> CreateLobby(string lobbyName, int maxPlayers, Dictionary<string, DataObject> lobbyData)
     {
         Dictionary<string, PlayerDataObject> playerDataObjects = new Dictionary<string, PlayerDataObject>();
 
+        if (UserData.Instance != null && UserData.Instance.Character != null)
+        {
+            playerDataObjects["PlayerName"] = new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, UserData.Instance.Character.PlayerName);
+            Debug.Log($"Setting player data: {UserData.Instance.Character.PlayerName}");
+        }
+
+        Player player = new Player(AuthenticationService.Instance.PlayerId, null, playerDataObjects);
+
         // 추가 데이터 객체 초기화
         lobbyData["GameStart"] = new DataObject(DataObject.VisibilityOptions.Member, "false");
         lobbyData["SceneName"] = new DataObject(DataObject.VisibilityOptions.Member, "");
-
-        Player player = new Player(AuthenticationService.Instance.PlayerId, null, playerDataObjects);
 
         CreateLobbyOptions options = new CreateLobbyOptions
         {
@@ -36,49 +80,59 @@ public class LobbyManager : SceneSingleton<LobbyManager>
 
         try
         {
-            lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
-            Debug.Log($"Lobby created with ID: {lobby.Id}");
+            Lobby createdLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
 
-            StartHeartbeat();
-            StartRefreshLobby();
-
-            return lobby;
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Failed to create lobby: {ex.Message}");
-            return null;
-        }
-    }
-
-    public async Task<Lobby> CreateLobby(string lobbyName, int maxPlayers)
-    {
-        CreateLobbyOptions options = new CreateLobbyOptions
-        {
-            IsPrivate = false,
-            Data = new Dictionary<string, DataObject>
+            if (createdLobby != null)
             {
-                // 예: 초기 데이터를 설정하려면 여기에 추가
-                // { "exampleKey", new DataObject(DataObject.VisibilityOptions.Member, "exampleValue") }
+                Debug.Log($"Lobby created with ID: {createdLobby.Id}");
+                this.lobby = createdLobby; // 클래스 수준의 로비 변수에 할당
+                StartHeartbeat();
+                StartRefreshLobby();
+                CachePlayerNames(createdLobby);
+                return createdLobby;
             }
-        };
-
-        try
-        {
-            lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
-            Debug.Log($"Lobby created with ID: {lobby.Id}");
-
-            StartHeartbeat();
-            StartRefreshLobby();
-
-            return lobby;
+            else
+            {
+                Debug.LogError("Lobby creation returned null");
+                return null;
+            }
         }
         catch (Exception ex)
         {
             Debug.LogError($"Failed to create lobby: {ex.Message}");
+            Debug.LogError($"Stack Trace: {ex.StackTrace}");
             return null;
         }
     }
+
+    //public async Task<Lobby> CreateLobby(string lobbyName, int maxPlayers)
+    //{
+    //    CreateLobbyOptions options = new CreateLobbyOptions
+    //    {
+    //        IsPrivate = false,
+    //        Data = new Dictionary<string, DataObject>
+    //        {
+    //            // 예: 초기 데이터를 설정하려면 여기에 추가
+    //            // { "exampleKey", new DataObject(DataObject.VisibilityOptions.Member, "exampleValue") }
+    //        }
+    //    };
+
+    //    try
+    //    {
+    //        lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
+    //        Debug.Log($"Lobby created with ID: {lobby.Id}");
+
+    //        StartHeartbeat();
+    //        StartRefreshLobby();
+
+    //        return lobby;
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Debug.LogError($"Failed to create lobby: {ex.Message}");
+    //        return null;
+    //    }
+    //}
 
 
 
@@ -91,7 +145,6 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         }
         catch (RequestFailedException ex)
         {
-           // Debug.LogError($"Failed to get lobbies: {ex.Message} (Error Code: {ex.ErrorCode})");
 
             // 특정 오류 코드 처리
             if (ex.ErrorCode == 401)
@@ -122,10 +175,13 @@ public class LobbyManager : SceneSingleton<LobbyManager>
             StartHeartbeat();
             StartRefreshLobby();
 
-            if (!ValidateLobbyData(lobby))
+            if (lobby != null)
             {
-                Debug.LogError("Joined lobby data is invalid.");
-                return false;
+                CachePlayerNames(lobby);
+            }
+            else
+            {
+                Debug.LogError("Lobby is null after joining.");
             }
 
             return true;
@@ -137,24 +193,45 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         }
     }
 
-    public async Task<bool> JoinLobby(string lobbyId)
-    {
-        try
-        {
-            lobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId);
-            Debug.Log($"Joined lobby with ID: {lobby.Id}");
+    //public async Task<bool> JoinLobby(string lobbyId)
+    //{
+    //    try
+    //    {
+    //        Dictionary<string, PlayerDataObject> playerData = new Dictionary<string, PlayerDataObject>();
+    //        if (UserData.Instance != null && UserData.Instance.Character != null)
+    //        {
+    //            playerData["PlayerName"] = new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, UserData.Instance.Character.PlayerName);
+    //        }
 
-            StartHeartbeat();
-            StartRefreshLobby();
+    //        var options = new JoinLobbyByIdOptions
+    //        {
+    //            Player = new Player(AuthenticationService.Instance.PlayerId, null, playerData)
+    //        };
 
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Failed to join lobby: {ex.Message}");
-            return false;
-        }
-    }
+
+    //        lobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId);
+    //        Debug.Log($"Joined lobby with ID: {lobby.Id}");
+
+    //        StartHeartbeat();
+    //        StartRefreshLobby();
+
+    //        if (lobby != null)
+    //        {
+    //            CachePlayerNames(lobby);
+    //        }
+    //        else
+    //        {
+    //            Debug.LogError("Lobby is null after joining.");
+    //        }
+
+    //        return true;
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Debug.LogError($"Failed to join lobby: {ex.Message}");
+    //        return false;
+    //    }
+    //}
 
     public async Task<bool> LeaveLobby()
     {
@@ -183,7 +260,21 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         {
             StopCoroutine(heartbeatCoroutine);
         }
-        heartbeatCoroutine = StartCoroutine(HeartbeatLobbyCoroutine(lobby.Id, 15f));
+
+        if (lobby == null)
+        {
+            Debug.LogError("Lobby is null in StartHeartbeat.");
+            return;
+        }
+
+        if (AuthenticationService.Instance.PlayerId == lobby.HostId)
+        {
+            heartbeatCoroutine = StartCoroutine(HeartbeatLobbyCoroutine(lobby.Id, 15f));
+        }
+        else
+        {
+            Debug.LogWarning("Only the host can send heartbeat.");
+        }
     }
 
     private void StopHeartbeat()
@@ -199,15 +290,27 @@ public class LobbyManager : SceneSingleton<LobbyManager>
     {
         while (true)
         {
-            try
+            var sendHeartbeatTask = SendHeartbeatPingAsync(lobbyId);
+            yield return new WaitUntil(() => sendHeartbeatTask.IsCompleted);
+
+            if (sendHeartbeatTask.IsFaulted)
             {
-                LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
+                Debug.LogError($"Failed to send heartbeat: {sendHeartbeatTask.Exception}");
             }
-            catch (Exception ex)
-            {
-                Debug.LogError($"Failed to send heartbeat: {ex.Message}");
-            }
+
             yield return new WaitForSecondsRealtime(waitTimeSeconds);
+        }
+    }
+
+    private async Task SendHeartbeatPingAsync(string lobbyId)
+    {
+        try
+        {
+            await LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Failed to send heartbeat: {ex.Message}");
         }
     }
 
@@ -217,6 +320,13 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         {
             StopCoroutine(refreshLobbyCoroutine);
         }
+
+        if (lobby == null)
+        {
+            Debug.LogError("Lobby is null in StartRefreshLobby.");
+            return;
+        }
+
         refreshLobbyCoroutine = StartCoroutine(RefreshLobbyCoroutine(lobby.Id, 5f));
     }
 
@@ -276,7 +386,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         }
         catch (LobbyServiceException ex)
         {
-            if (ex.ErrorCode == 16001) // 정수 코드로 비교
+            if (ex.ErrorCode == 16001)
             {
                 Debug.LogWarning("Lobby not found. It might have been deleted or expired.");
             }
@@ -291,6 +401,59 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         }
     }
 
+
+    private void CachePlayerNames(Lobby lobby)
+    {
+        if (lobby == null)
+        {
+            Debug.LogError("Lobby is null in CachePlayerNames.");
+            return;
+        }
+
+        if (lobby.Players == null)
+        {
+            Debug.LogError("Lobby players are null in CachePlayerNames.");
+            return;
+        }
+
+        foreach (var player in lobby.Players)
+        {
+            string playerName = "Unknown";
+            if (player.Data != null && player.Data.ContainsKey("PlayerName"))
+            {
+                playerName = player.Data["PlayerName"].Value;
+                Debug.Log($"Player {player.Id} has name: {playerName}");
+            }
+            else
+            {
+                Debug.LogWarning($"Player {player.Id} does not have a PlayerName in their data.");
+            }
+
+            CachePlayerName(player.Id, playerName);
+        }
+    }
+
+    public void CachePlayerName(string playerId, string playerName)
+    {
+        if (!playerNamesCache.ContainsKey(playerId))
+        {
+            playerNamesCache.Add(playerId, playerName);
+            Debug.Log($"Cached player name: {playerId} -> {playerName}");
+        }
+    }
+
+    public string GetCachedPlayerName(string playerId)
+    {
+        if (playerNamesCache.TryGetValue(playerId, out var playerName))
+        {
+            return playerName;
+        }
+        else
+        {
+            Debug.LogWarning($"Player ID {playerId} not found in cache.");
+            return "Unknown";
+        }
+    }
 
     private bool ValidateLobbyData(Lobby lobby)
     {
