@@ -10,79 +10,79 @@ public class ButtonPointerEvent : MonoBehaviour
     public TextMeshProUGUI text;
     public Image image;
     public GameObject select;
-    private Vector3 defaultScale; // ÃÊ±â localScale °ªÀ» ÀúÀåÇÏ´Â private º¯¼ö
+    private Vector3 defaultScale; // ì´ˆê¸° localScale ê°’ì„ ì €ì¥í•˜ëŠ” private ë³€ìˆ˜
 
     void Start()
     {
-        defaultScale = transform.localScale; // ÃÊ±â localScale °ªÀ» ÀúÀå
+        defaultScale = transform.localScale; // ì´ˆê¸° localScale ê°’ì„ ì €ì¥
     }
 
     public void OnPointerEnter()
     {
-        ChangeScaleAndColor(1.2f, Color.black); // Å©±â¿Í »ö»óÀ» º¯°æÇÏ´Â ¸Ş¼­µå È£Ãâ
+        ChangeScaleAndColor(1.2f, Color.black); // í¬ê¸°ì™€ ìƒ‰ìƒì„ ë³€ê²½í•˜ëŠ” ë©”ì„œë“œ í˜¸ì¶œ
     }
 
     public void OnPointerExit()
     {
-        ChangeScaleAndColor(1.0f, Color.white); // ¿ø·¡ Å©±â¿Í »ö»óÀ¸·Î µÇµ¹¸®´Â ¸Ş¼­µå È£Ãâ
+        ChangeScaleAndColor(1.0f, Color.white); // ì›ë˜ í¬ê¸°ì™€ ìƒ‰ìƒìœ¼ë¡œ ë˜ëŒë¦¬ëŠ” ë©”ì„œë“œ í˜¸ì¶œ
     }
 
     public void OnPointerDown()
     {
-        Debug.Log("´©¸§"); // Å¬¸¯ ½Ã ·Î±× Ãâ·Â
-        ResetScaleAndColor(); // Å©±â¿Í »ö»óÀ» ÃÊ±â »óÅÂ·Î µÇµ¹¸®´Â ¸Ş¼­µå È£Ãâ
+        
+        ResetScaleAndColor(); // í¬ê¸°ì™€ ìƒ‰ìƒì„ ì´ˆê¸° ìƒíƒœë¡œ ë˜ëŒë¦¬ëŠ” ë©”ì„œë“œ í˜¸ì¶œ
     }
 
     public void OnPointerUp()
     {
-        Debug.Log("¶À"); // Å¬¸¯ ÇØÁ¦ ½Ã ·Î±× Ãâ·Â
+       
     }
 
     public void OnPointerDownUpgrade()
     {
-        ChangeImageColor(Color.red); // ÀÌ¹ÌÁö »ö»óÀ» »¡°£»öÀ¸·Î º¯°æÇÏ´Â ¸Ş¼­µå È£Ãâ
+        ChangeImageColor(Color.red); // ì´ë¯¸ì§€ ìƒ‰ìƒì„ ë¹¨ê°„ìƒ‰ìœ¼ë¡œ ë³€ê²½í•˜ëŠ” ë©”ì„œë“œ í˜¸ì¶œ
     }
 
     public void OnPointerUpUpgrade()
     {
-        ChangeImageColor(Color.white); // ÀÌ¹ÌÁö »ö»óÀ» Èò»öÀ¸·Î º¯°æÇÏ´Â ¸Ş¼­µå È£Ãâ
+        ChangeImageColor(Color.white); // ì´ë¯¸ì§€ ìƒ‰ìƒì„ í°ìƒ‰ìœ¼ë¡œ ë³€ê²½í•˜ëŠ” ë©”ì„œë“œ í˜¸ì¶œ
     }
 
     public void OnPointerEnterStage()
     {
-        ChangeScale(1.2f); // Å©±â¸¦ º¯°æÇÏ´Â ¸Ş¼­µå È£Ãâ
-        select.SetActive(true); // ¼±ÅÃ ¿ÀºêÁ§Æ® È°¼ºÈ­
+        ChangeScale(1.2f); // í¬ê¸°ë¥¼ ë³€ê²½í•˜ëŠ” ë©”ì„œë“œ í˜¸ì¶œ
+        select.SetActive(true); // ì„ íƒ ì˜¤ë¸Œì íŠ¸ í™œì„±í™”
     }
 
     public void OnPointerExitStage()
     {
-        ChangeScale(1.0f); // ¿ø·¡ Å©±â·Î µÇµ¹¸®´Â ¸Ş¼­µå È£Ãâ
-        select.SetActive(false); // ¼±ÅÃ ¿ÀºêÁ§Æ® ºñÈ°¼ºÈ­
+        ChangeScale(1.0f); // ì›ë˜ í¬ê¸°ë¡œ ë˜ëŒë¦¬ëŠ” ë©”ì„œë“œ í˜¸ì¶œ
+        select.SetActive(false); // ì„ íƒ ì˜¤ë¸Œì íŠ¸ ë¹„í™œì„±í™”
     }
 
-    // Å©±â¿Í ÅØ½ºÆ® »ö»óÀ» º¯°æÇÏ´Â ¸Ş¼­µå Ãß°¡
+    // í¬ê¸°ì™€ í…ìŠ¤íŠ¸ ìƒ‰ìƒì„ ë³€ê²½í•˜ëŠ” ë©”ì„œë“œ ì¶”ê°€
     private void ChangeScaleAndColor(float scaleMultiplier, Color textColor)
     {
-        transform.localScale = defaultScale * scaleMultiplier; // Å©±â º¯°æ
-        text.color = textColor; // ÅØ½ºÆ® »ö»ó º¯°æ
+        transform.localScale = defaultScale * scaleMultiplier; // í¬ê¸° ë³€ê²½
+        text.color = textColor; // í…ìŠ¤íŠ¸ ìƒ‰ìƒ ë³€ê²½
     }
 
-    // Å©±â¿Í ÅØ½ºÆ® »ö»óÀ» ÃÊ±â »óÅÂ·Î µÇµ¹¸®´Â ¸Ş¼­µå Ãß°¡
+    // í¬ê¸°ì™€ í…ìŠ¤íŠ¸ ìƒ‰ìƒì„ ì´ˆê¸° ìƒíƒœë¡œ ë˜ëŒë¦¬ëŠ” ë©”ì„œë“œ ì¶”ê°€
     private void ResetScaleAndColor()
     {
-        transform.localScale = defaultScale; // Å©±â ÃÊ±âÈ­
-        text.color = Color.white; // ÅØ½ºÆ® »ö»ó ÃÊ±âÈ­
+        transform.localScale = defaultScale; // í¬ê¸° ì´ˆê¸°í™”
+        text.color = Color.white; // í…ìŠ¤íŠ¸ ìƒ‰ìƒ ì´ˆê¸°í™”
     }
 
-    // Å©±â¸¸ º¯°æÇÏ´Â ¸Ş¼­µå Ãß°¡
+    // í¬ê¸°ë§Œ ë³€ê²½í•˜ëŠ” ë©”ì„œë“œ ì¶”ê°€
     private void ChangeScale(float scaleMultiplier)
     {
-        transform.localScale = defaultScale * scaleMultiplier; // Å©±â º¯°æ
+        transform.localScale = defaultScale * scaleMultiplier; // í¬ê¸° ë³€ê²½
     }
 
-    // ÀÌ¹ÌÁö »ö»ó¸¸ º¯°æÇÏ´Â ¸Ş¼­µå Ãß°¡
+    // ì´ë¯¸ì§€ ìƒ‰ìƒë§Œ ë³€ê²½í•˜ëŠ” ë©”ì„œë“œ ì¶”ê°€
     private void ChangeImageColor(Color color)
     {
-        image.color = color; // ÀÌ¹ÌÁö »ö»ó º¯°æ
+        image.color = color; // ì´ë¯¸ì§€ ìƒ‰ìƒ ë³€ê²½
     }
 }

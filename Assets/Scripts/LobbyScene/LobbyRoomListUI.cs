@@ -59,6 +59,18 @@ public class LobbyRoomListUI : MonoBehaviour
         Button_LobbyRoomListPrefab.onClick.RemoveAllListeners();
         Button_LobbyRoomListPrefab.onClick.AddListener(OnLobbyRoomListPrefabClicked);
 
+        foreach (var player in lobby.Players)
+        {
+            if (!LobbyManager.Instance.playerNamesCache.ContainsKey(player.Id))
+            {
+                var playerName = await LobbyManager.Instance.FetchPlayerNameFromServer(player.Id);
+                if (!string.IsNullOrEmpty(playerName))
+                {
+                    LobbyManager.Instance.playerNamesCache[player.Id] = playerName;
+                }
+            }
+        }
+
         return true;
     }
 

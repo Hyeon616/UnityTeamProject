@@ -675,7 +675,6 @@ public class LobbyController : MonoBehaviour
             return;
         }
 
-        // 플레이어 데이터를 설정합니다.
         Dictionary<string, PlayerDataObject> playerData = new Dictionary<string, PlayerDataObject>();
         if (UserData.Instance != null && UserData.Instance.Character != null)
         {
@@ -688,6 +687,14 @@ public class LobbyController : MonoBehaviour
         {
             Debug.Log("Room joined successfully.");
             await RefreshPlayerList();
+
+            // Debugging: Print out the cache after joining the room
+            foreach (var entry in LobbyManager.Instance.playerNamesCache)
+            {
+                Debug.Log($"Cache After Join - Player ID: {entry.Key}, Player Name: {entry.Value}");
+            }
+
+            leaveRoomButton.gameObject.SetActive(true);
         }
         else
         {
@@ -1137,8 +1144,22 @@ public class LobbyController : MonoBehaviour
                         continue;
                     }
 
-                    string playerName = LobbyManager.Instance.GetCachedPlayerName(player.Id);
-                    playerUI.Initialize(playerName);
+                    if (LobbyManager.Instance.playerNamesCache.TryGetValue(player.Id, out var playerName))
+                    {
+                        playerUI.Initialize(playerName);
+                        Debug.Log($"Added player to list: {playerName} with Player ID: {player.Id}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Player name not found in cache for player ID: {player.Id}");
+                        // 비동기 작업 예시: 서버에서 플레이어 이름을 가져오기
+                        playerName = await LobbyManager.Instance.FetchPlayerNameFromServer(player.Id);
+                        if (!string.IsNullOrEmpty(playerName))
+                        {
+                            playerUI.Initialize(playerName);
+                            Debug.Log($"Added player to list after fetching: {playerName} with Player ID: {player.Id}");
+                        }
+                    }
                 }
                 else
                 {

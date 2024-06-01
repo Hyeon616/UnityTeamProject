@@ -12,7 +12,7 @@ using UnityEngine.Networking;
 public class LobbyManager : SceneSingleton<LobbyManager>
 {
     public Lobby lobby;
-    private Dictionary<string, string> playerNamesCache = new Dictionary<string, string>();
+    public Dictionary<string, string> playerNamesCache = new Dictionary<string, string>();
 
     private Coroutine heartbeatCoroutine;
     private Coroutine refreshLobbyCoroutine;
@@ -21,7 +21,9 @@ public class LobbyManager : SceneSingleton<LobbyManager>
 
     private void Start()
     {
-        SaveUGSPlayerID(UserData.Instance.UserId, AuthenticationService.Instance.PlayerId);
+        string ugsPlayerId = AuthenticationService.Instance.PlayerId;
+        Debug.Log($"Attempting to save UGSPlayerID: {ugsPlayerId}");
+        SaveUGSPlayerID(UserData.Instance.UserId, ugsPlayerId);
     }
 
     private async void SaveUGSPlayerID(string userId, string ugsPlayerId)
@@ -34,6 +36,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         };
 
         string jsonData = JsonUtility.ToJson(requestBody);
+        Debug.Log($"Sending request to URL: {url} with data: {jsonData}");
 
         using (UnityWebRequest request = new UnityWebRequest(url, "POST"))
         {
@@ -67,7 +70,6 @@ public class LobbyManager : SceneSingleton<LobbyManager>
 
         Player player = new Player(AuthenticationService.Instance.PlayerId, null, playerDataObjects);
 
-        // 추가 데이터 객체 초기화
         lobbyData["GameStart"] = new DataObject(DataObject.VisibilityOptions.Member, "false");
         lobbyData["SceneName"] = new DataObject(DataObject.VisibilityOptions.Member, "");
 
@@ -88,7 +90,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
                 this.lobby = createdLobby; // 클래스 수준의 로비 변수에 할당
                 StartHeartbeat();
                 StartRefreshLobby();
-                CachePlayerNames(createdLobby);
+                await CachePlayerNames(createdLobby);
                 return createdLobby;
             }
             else
@@ -177,7 +179,13 @@ public class LobbyManager : SceneSingleton<LobbyManager>
 
             if (lobby != null)
             {
-                CachePlayerNames(lobby);
+                await CachePlayerNames(lobby);
+
+                // Debugging: Print out the cache after joining the room
+                foreach (var entry in playerNamesCache)
+                {
+                    Debug.Log($"Cache After Join - Player ID: {entry.Key}, Player Name: {entry.Value}");
+                }
             }
             else
             {
@@ -402,7 +410,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
     }
 
 
-    private void CachePlayerNames(Lobby lobby)
+    private async Task CachePlayerNames(Lobby lobby)
     {
         if (lobby == null)
         {
@@ -418,18 +426,32 @@ public class LobbyManager : SceneSingleton<LobbyManager>
 
         foreach (var player in lobby.Players)
         {
-            string playerName = "Unknown";
-            if (player.Data != null && player.Data.ContainsKey("PlayerName"))
+            if (player.Data.TryGetValue("PlayerName", out var playerNameData))
             {
-                playerName = player.Data["PlayerName"].Value;
-                Debug.Log($"Player {player.Id} has name: {playerName}");
+                string playerName = playerNameData.Value;
+                Debug.Log($"Caching player name: {playerName} for player ID: {player.Id}");
+                playerNamesCache[player.Id] = playerName;
             }
             else
             {
-                Debug.LogWarning($"Player {player.Id} does not have a PlayerName in their data.");
+                // Fetch player name from the server if not found in the lobby data
+                string playerName = await FetchPlayerNameFromServer(player.Id);
+                if (!string.IsNullOrEmpty(playerName))
+                {
+                    Debug.Log($"Fetched and cached player name: {playerName} for player ID: {player.Id}");
+                    playerNamesCache[player.Id] = playerName;
+                }
+                else
+                {
+                    Debug.LogError($"Player name not found for player ID: {player.Id}");
+                }
             }
+        }
 
-            CachePlayerName(player.Id, playerName);
+        // Debugging: Print out the entire cache
+        foreach (var entry in playerNamesCache)
+        {
+            Debug.Log($"Cache Entry - Player ID: {entry.Key}, Player Name: {entry.Value}");
         }
     }
 
@@ -507,5 +529,31 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         }
     }
 
+    public async Task<string> FetchPlayerNameFromServer(string playerId)
+    {
+        string url = $"{RemoteConfigManager.ServerUrl}/api/players/ugs/{playerId}";
+        using (UnityWebRequest request = UnityWebRequest.Get(url))
+        {
+            Debug.Log($"Sending request to URL: {url}");
+            await request.SendWebRequestAsync();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                string jsonResult = request.downloadHandler.text;
+                Debug.Log($"Received response: {jsonResult}");
+                var playerData = JsonUtility.FromJson<CharacterData>(jsonResult);
+                if (playerData != null)
+                {
+                    return playerData.PlayerName;
+                }
+            }
+            else
+            {
+                Debug.LogError($"Failed to fetch player name for player ID: {playerId}. Exception: {request.error}");
+            }
+        }
+
+        return null;
+    }
 
 }

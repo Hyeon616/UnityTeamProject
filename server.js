@@ -135,7 +135,7 @@ app.post('/api/login', async (req, res) => {
         // 사용자 정보 조회
         const userResult = await pool.request()
             .input('LoginUsername', sql.NVarChar, Username)
-            .query('SELECT UserID, Username, PasswordHash, PlayerName, UGSPlayerID FROM Users WHERE Username = @LoginUsername');
+            .query('SELECT UserID, Username, PasswordHash, PlayerName FROM Users WHERE Username = @LoginUsername');
 
         if (userResult.recordset.length === 0) {
             return res.status(404).json({ message: 'Invalid username or password' });
@@ -147,17 +147,6 @@ app.post('/api/login', async (req, res) => {
         const isPasswordValid = await bcrypt.compare(Password, user.PasswordHash);
         if (!isPasswordValid) {
             return res.status(404).json({ message: 'Invalid username or password' });
-        }
-
-        let ugsPlayerID = user.UGSPlayerID;
-
-        // UGS Player ID가 없거나 동일한 경우 새로 생성
-        if (!ugsPlayerID || await isUGSPlayerIDDuplicated(ugsPlayerID, pool)) {
-            ugsPlayerID = generateUGSPlayerID();
-            await pool.request()
-                .input('UserID', sql.Int, user.UserID)
-                .input('UGSPlayerID', sql.NVarChar, ugsPlayerID)
-                .query('UPDATE Players SET UGSPlayerID = @UGSPlayerID WHERE UserID = @UserID');
         }
 
         // 플레이어 정보 조회
@@ -180,7 +169,12 @@ app.post('/api/login', async (req, res) => {
             ArmorEnhancement: player.ArmorEnhancement
         };
 
-        res.status(200).json({ message: 'Login successful', UserId: user.UserID, Character: characterData, UGSPlayerID: ugsPlayerID });
+        // UGSPlayerID 추가 (있는 경우)
+        if (player.UGSPlayerID) {
+            characterData.UGSPlayerID = player.UGSPlayerID;
+        }
+
+        res.status(200).json({ message: 'Login successful', UserId: user.UserID, Character: characterData });
     } catch (err) {
         console.error('로그인 오류:', err);
         res.status(500).send('서버 오류');
@@ -255,6 +249,7 @@ app.get('/api/players/:id', async (req, res) => {
 app.post('/api/save-ugs-playerid', async (req, res) => {
     try {
         const { UserID, UGSPlayerID } = req.body;
+        console.log(`Received request to save UGSPlayerID: UserID=${UserID}, UGSPlayerID=${UGSPlayerID}`);
         const pool = await sql.connect(dbConfig);
 
         await pool.request()
@@ -262,6 +257,7 @@ app.post('/api/save-ugs-playerid', async (req, res) => {
             .input('UGSPlayerID', sql.NVarChar, UGSPlayerID)
             .query('UPDATE Players SET UGSPlayerID = @UGSPlayerID WHERE UserID = @UserID');
 
+        console.log(`Successfully updated UGSPlayerID for UserID=${UserID}`);
         res.status(200).json({ message: 'UGS Player ID saved successfully' });
     } catch (err) {
         console.error('Error saving UGS Player ID:', err);
@@ -269,32 +265,21 @@ app.post('/api/save-ugs-playerid', async (req, res) => {
     }
 });
 
-app.get('/api/players/ugs/:playerId', async (req, res) => {
+
+app.get('/api/players/ugs/:ugsPlayerId', async (req, res) => {
     try {
-        const { playerId } = req.params;
+        const { ugsPlayerId } = req.params;
         const pool = await sql.connect(dbConfig);
 
-        // UGSPlayerID로 Players 테이블에서 UserID 조회
-        const userResult = await pool.request()
-            .input('UGSPlayerID', sql.NVarChar, playerId)
-            .query('SELECT UserID FROM Players WHERE UGSPlayerID = @UGSPlayerID');
+        const result = await pool.request()
+            .input('UGSPlayerID', sql.NVarChar, ugsPlayerId)
+            .query('SELECT * FROM Players WHERE UGSPlayerID = @UGSPlayerID');
 
-        if (userResult.recordset.length === 0) {
-            return res.status(404).json({ message: 'Player not found for given UGS playerId' });
+        if (result.recordset.length === 0) {
+            return res.status(404).json({ message: 'Player not found' });
         }
 
-        const userId = userResult.recordset[0].UserID;
-
-        // UserID로 Players 테이블에서 플레이어 정보 조회
-        const playerResult = await pool.request()
-            .input('UserID', sql.Int, userId)
-            .query('SELECT * FROM Players WHERE UserID = @UserID');
-
-        if (playerResult.recordset.length === 0) {
-            return res.status(404).json({ message: 'Player not found for given UserID' });
-        }
-
-        res.json(playerResult.recordset[0]);
+        res.json(result.recordset[0]);
     } catch (err) {
         console.error('데이터 조회 오류:', err);
         res.status(500).send('서버 오류');

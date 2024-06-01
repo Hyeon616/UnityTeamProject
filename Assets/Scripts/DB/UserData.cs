@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -127,7 +128,7 @@ public static class UnityWebRequestExtensions
         {
             if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
             {
-                tcs.SetException(new UnityWebRequestException(request));
+                tcs.SetException(new Exception(request.error));
             }
             else
             {
