@@ -33,6 +33,8 @@ public class LobbyRoomListUI : MonoBehaviour
         }
     }
 
+
+
     public async Task<bool> Initialize(Lobby lobby, System.Action<string> onJoinRoom, string hiddenTitleText)
     {
         if (!ValidateLobbyData(lobby))
@@ -125,4 +127,13 @@ public class LobbyRoomListUI : MonoBehaviour
     {
         onLobbySelected?.Invoke(_lobbyId);
     }
+
+    public void UpdatePlayerCount(int currentCount, int maxCount)
+    {
+        Debug.Log($"Updating player count: {currentCount}/{maxCount}");
+        playerCountText.text = $"{currentCount}/{maxCount}";
+    }
+
+
+
 }

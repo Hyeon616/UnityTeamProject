@@ -13,6 +13,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
 {
     public Lobby lobby;
     public Dictionary<string, string> playerNamesCache = new Dictionary<string, string>();
+    
 
     private Coroutine heartbeatCoroutine;
     private Coroutine refreshLobbyCoroutine;
@@ -22,7 +23,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
     private void Start()
     {
         string ugsPlayerId = AuthenticationService.Instance.PlayerId;
-        Debug.Log($"Attempting to save UGSPlayerID: {ugsPlayerId}");
+       // Debug.Log($"Attempting to save UGSPlayerID: {ugsPlayerId}");
         SaveUGSPlayerID(UserData.Instance.UserId, ugsPlayerId);
     }
 
@@ -36,7 +37,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         };
 
         string jsonData = JsonUtility.ToJson(requestBody);
-        Debug.Log($"Sending request to URL: {url} with data: {jsonData}");
+      //  Debug.Log($"Sending request to URL: {url} with data: {jsonData}");
 
         using (UnityWebRequest request = new UnityWebRequest(url, "POST"))
         {
@@ -102,7 +103,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         catch (Exception ex)
         {
             Debug.LogError($"Failed to create lobby: {ex.Message}");
-            Debug.LogError($"Stack Trace: {ex.StackTrace}");
+           // Debug.LogError($"Stack Trace: {ex.StackTrace}");
             return null;
         }
     }
@@ -259,7 +260,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
             StopCoroutine(refreshLobbyCoroutine);
         }
 
-        refreshLobbyCoroutine = StartCoroutine(RefreshLobbyCoroutine(lobby.Id, 2f));
+        refreshLobbyCoroutine = StartCoroutine(RefreshLobbyCoroutine(lobby.Id, 3f));
     }
 
     private void StopRefreshLobby()
@@ -287,13 +288,11 @@ public class LobbyManager : SceneSingleton<LobbyManager>
     }
 
 
-    private async Task RefreshLobbyAsync(string lobbyId)
+    public async Task RefreshLobbyAsync(string lobbyId)
     {
         try
         {
-            Debug.Log($"Attempting to refresh lobby with ID: {lobbyId}");
             Lobby newLobby = await LobbyService.Instance.GetLobbyAsync(lobbyId);
-            Debug.Log("GetLobbyAsync call completed.");
 
             if (newLobby == null)
             {
@@ -321,11 +320,10 @@ public class LobbyManager : SceneSingleton<LobbyManager>
                 }
             }
 
-            if (playersChanged)
+            if (playersChanged || newLobby.LastUpdated > lobby.LastUpdated)
             {
                 lobby = newLobby;
                 OnLobbyUpdated?.Invoke(lobby);
-                Debug.Log("Lobby successfully refreshed and players updated.");
             }
             else
             {
@@ -369,16 +367,13 @@ public class LobbyManager : SceneSingleton<LobbyManager>
             if (player.Data.TryGetValue("PlayerName", out var playerNameData))
             {
                 string playerName = playerNameData.Value;
-                Debug.Log($"Caching player name: {playerName} for player ID: {player.Id}");
                 playerNamesCache[player.Id] = playerName;
             }
             else
             {
-                // Fetch player name from the server if not found in the lobby data
                 string playerName = await FetchPlayerNameFromServer(player.Id);
                 if (!string.IsNullOrEmpty(playerName))
                 {
-                    Debug.Log($"Fetched and cached player name: {playerName} for player ID: {player.Id}");
                     playerNamesCache[player.Id] = playerName;
                 }
                 else
@@ -388,11 +383,6 @@ public class LobbyManager : SceneSingleton<LobbyManager>
             }
         }
 
-        // Debugging: Print out the entire cache
-        foreach (var entry in playerNamesCache)
-        {
-            Debug.Log($"Cache Entry - Player ID: {entry.Key}, Player Name: {entry.Value}");
-        }
     }
 
     public void CachePlayerName(string playerId, string playerName)
@@ -400,7 +390,6 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         if (!playerNamesCache.ContainsKey(playerId))
         {
             playerNamesCache.Add(playerId, playerName);
-            Debug.Log($"Cached player name: {playerId} -> {playerName}");
         }
     }
 
@@ -474,13 +463,12 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         string url = $"{RemoteConfigManager.ServerUrl}/api/players/ugs/{playerId}";
         using (UnityWebRequest request = UnityWebRequest.Get(url))
         {
-            Debug.Log($"Sending request to URL: {url}");
+            
             await request.SendWebRequestAsync();
 
             if (request.result == UnityWebRequest.Result.Success)
             {
                 string jsonResult = request.downloadHandler.text;
-                Debug.Log($"Received response: {jsonResult}");
                 var playerData = JsonUtility.FromJson<CharacterData>(jsonResult);
                 if (playerData != null)
                 {

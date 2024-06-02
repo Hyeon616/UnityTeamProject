@@ -5,14 +5,28 @@ public class LobbyPlayerListUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI playerNameText;
 
-    public void Initialize(string playerName)
+    private void Awake()
     {
         if (playerNameText == null)
         {
-            Debug.LogError("playerNameText is not assigned.");
+            enabled = false;
+            return;
+        }
+    }
+
+    public void Initialize(string playerName)
+    {
+        if (string.IsNullOrEmpty(playerName))
+        {
+            Debug.LogError("playerName is null or empty.");
             return;
         }
 
         playerNameText.text = playerName;
+    }
+
+    public string GetPlayerNameText()
+    {
+        return playerNameText.text;
     }
 }
