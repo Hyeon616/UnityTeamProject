@@ -139,7 +139,6 @@ public class LobbyRoomListUI : MonoBehaviour
     public void UpdatePlayerCount(int currentPlayers, int maxPlayers)
     {
         playerCountText.text = $"{currentPlayers}/{maxPlayers}";
-        Debug.Log($"Player count updated to: {currentPlayers}/{maxPlayers}");
     }
 
 

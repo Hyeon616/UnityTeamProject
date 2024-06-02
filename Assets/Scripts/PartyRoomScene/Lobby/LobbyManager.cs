@@ -60,24 +60,22 @@ public class LobbyManager : SceneSingleton<LobbyManager>
 
             await request.SendWebRequestAsync();
 
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                Debug.Log("UGS Player ID saved successfully");
-            }
-            else
-            {
-                Debug.LogError($"Error saving UGS Player ID: {request.error}");
-            }
+            //if (request.result == UnityWebRequest.Result.Success)
+            //{
+            //    Debug.Log("UGS Player ID saved successfully");
+            //}
+            //else
+            //{
+            //    Debug.LogError($"Error saving UGS Player ID: {request.error}");
+            //}
         }
     }
 
 
     private void HandleLobbyUpdated(Lobby updatedLobby)
     {
-        // 로비 업데이트 핸들러
-        Debug.Log("HandleLobbyUpdated called");
+       
         lobby = updatedLobby;
-        // 필요 시 추가 처리
     }
 
 
@@ -89,7 +87,6 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         if (UserData.Instance != null && UserData.Instance.Character != null)
         {
             playerDataObjects["PlayerName"] = new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, UserData.Instance.Character.PlayerName);
-            Debug.Log($"Setting player data: {UserData.Instance.Character.PlayerName}");
         }
 
         Player player = new Player(AuthenticationService.Instance.PlayerId, null, playerDataObjects);
@@ -110,7 +107,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
 
             if (createdLobby != null)
             {
-                Debug.Log($"Lobby created with ID: {createdLobby.Id}");
+                
                 this.lobby = createdLobby;
                 StartHeartbeat();
                 StartRefreshLobby();
@@ -301,9 +298,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
     {
         try
         {
-            Debug.Log($"Attempting to refresh lobby with ID: {lobbyId}");
             Lobby newLobby = await LobbyService.Instance.GetLobbyAsync(lobbyId);
-            Debug.Log("GetLobbyAsync call completed.");
 
             if (newLobby == null)
             {
@@ -321,7 +316,6 @@ public class LobbyManager : SceneSingleton<LobbyManager>
             {
                 lobby = newLobby;
                 OnLobbyUpdated?.Invoke(lobby); // 로비 업데이트 이벤트 호출
-                Debug.Log("Lobby successfully refreshed.");
             }
             else
             {

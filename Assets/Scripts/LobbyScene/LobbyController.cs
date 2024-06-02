@@ -7,6 +7,8 @@ using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.UI;
+using Mirror;
+
 
 public class LobbyController : MonoBehaviour
 {
@@ -82,20 +84,17 @@ public class LobbyController : MonoBehaviour
 
 
     private Lobby currentLobby;
-    //private LobbyRoomListUI lobbyRoomListUI;
 
     private void OnEnable()
     {
 
         RegisterListeners();
-        //LobbyRoomListUI.OnLobbyRoomListUICreated += RegisterLobbyRoomListUI;
         LobbyManager.OnLobbyUpdated += OnLobbyUpdated;
     }
 
     private void OnDisable()
     {
         UnregisterListeners();
-        //LobbyRoomListUI.OnLobbyRoomListUICreated -= RegisterLobbyRoomListUI;
         LobbyManager.OnLobbyUpdated -= OnLobbyUpdated;
     }
 
@@ -105,22 +104,19 @@ public class LobbyController : MonoBehaviour
         await RefreshPlayerList();
     }
 
-    private void Update()
-    {
-        if (LobbyManager.Instance.lobby != null && LobbyManager.Instance.lobby.Data.ContainsKey("GameStart"))
-        {
-            if (LobbyManager.Instance.lobby.Data["GameStart"].Value == "true")
-            {
-                string sceneName = LobbyManager.Instance.lobby.Data["SceneName"].Value;
-                LoadGameScene(sceneName);
-            }
-        }
-
-    }
-    //private void RegisterLobbyRoomListUI(LobbyRoomListUI ui)
+    //private void Update()
     //{
-    //    lobbyRoomListUI = ui;
+    //    if (LobbyManager.Instance.lobby != null && LobbyManager.Instance.lobby.Data.ContainsKey("GameStart"))
+    //    {
+    //        if (LobbyManager.Instance.lobby.Data["GameStart"].Value == "true")
+    //        {
+    //            string sceneName = LobbyManager.Instance.lobby.Data["SceneName"].Value;
+    //            LoadGameScene(sceneName);
+    //        }
+    //    }
+
     //}
+
 
     private void RegisterListeners()
     {
@@ -547,7 +543,7 @@ public class LobbyController : MonoBehaviour
 
     private async void RoomCodeSubmit()
     {
-        Debug.Log("Creating room...");
+        
 
         if (LobbyManager.Instance == null)
         {
@@ -569,10 +565,7 @@ public class LobbyController : MonoBehaviour
             var lobby = await LobbyManager.Instance.CreateLobby(sceneName, 3, lobbyData);
             if (lobby != null)
             {
-                Debug.Log("Room created successfully.");
-                Debug.Log($"Lobby ID: {lobby.Id}");
-                Debug.Log($"Lobby Name: {lobby.Name}");
-
+                
                 if (JoinMenuUI == null)
                 {
                     Debug.LogError("JoinMenuUI is null");
@@ -844,7 +837,6 @@ public class LobbyController : MonoBehaviour
             return;
         }
 
-        Debug.Log("Refreshing player list UI.");
 
         foreach (Transform child in LobbyRoomPlayerListContent)
         {
@@ -864,25 +856,20 @@ public class LobbyController : MonoBehaviour
 
             if (LobbyManager.Instance.playerNamesCache.TryGetValue(player.Id, out var playerName))
             {
-                Debug.Log($"Initializing player UI with player name: {playerName}");
+                
                 playerUI.Initialize(playerName);
-                Debug.Log($"Player name set to: {playerName}");
-                Debug.Log($"Current playerNameText.text: {playerUI.GetPlayerNameText()}");
             }
             else
             {
-                Debug.LogWarning($"Player name not found in cache for player ID: {player.Id}, fetching from server...");
                 string fetchedPlayerName = await LobbyManager.Instance.FetchPlayerNameFromServer(player.Id);
                 if (!string.IsNullOrEmpty(fetchedPlayerName))
                 {
                     LobbyManager.Instance.CachePlayerName(player.Id, fetchedPlayerName);
                     playerUI.Initialize(fetchedPlayerName);
-                    Debug.Log($"Fetched and set player name: {fetchedPlayerName}");
                 }
                 else
                 {
                     playerUI.Initialize("Unknown");
-                    Debug.LogError($"Failed to fetch player name for player ID: {player.Id}");
                 }
             }
         }
@@ -899,92 +886,37 @@ public class LobbyController : MonoBehaviour
     }
 
     // 동기화 되며 넘어가는 씬
-    private async void OnStartGame()
+    private void OnStartGame()
     {
+        // 현재 선택된 스테이지의 씬 이름 가져오기
+        string selectedStage = mapSelectionData.Maps[currentMapIndex].SceneName;
+        Debug.Log($"Selected stage: {selectedStage}");
 
-        //Debug.Log("Starting game...");
+        // 네트워크 매니저 가져오기
+        var networkManager = NetworkManager.singleton as NetworkManagerExtended;
+        if (networkManager != null)
+        {
+            // 호스트 시작
+            if (!NetworkClient.active && !NetworkServer.active)
+            {
+                Debug.Log("Starting as host...");
+                NetworkManager.singleton.StartHost();
+            }
 
-        //if (LobbyManager.Instance.lobby.HostId == AuthenticationService.Instance.PlayerId)
-        //{
-        //    Debug.Log("Creating relay as host...");
+            // 호스트가 이미 활성화된 상태에서 씬을 변경하려는 경우
+            if (NetworkServer.active)
+            {
+                Debug.Log("Host already active. Changing scene...");
+                networkManager.StartGame(selectedStage);
+            }
+        }
+        else
+        {
+            Debug.LogError("NetworkManagerExtended not found.");
+        }
 
-        //    string joinCode = await RelayManager.Instance.CreateRelay(3);
-        //    if (!string.IsNullOrEmpty(joinCode))
-        //    {
-        //        Debug.Log($"Relay server created. Join code: {joinCode}");
-
-        //        var (allocationId, key, connectionData, dtlsAddress, dtlsPort) = RelayManager.Instance.GetHostConnectionInfo();
-
-        //        UnityTransport transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-        //        transport.SetHostRelayData(dtlsAddress, (ushort)dtlsPort, allocationId, key, connectionData, true);
-
-        //        NetworkManager.Singleton.StartHost();
-
-        //        var lobbyData = new Dictionary<string, DataObject>
-        //    {
-        //        { "JoinCode", new DataObject(DataObject.VisibilityOptions.Member, joinCode) }
-        //    };
-
-        //        bool updated = await LobbyManager.Instance.UpdateLobbyData(lobbyData);
-        //        if (updated)
-        //        {
-        //            Debug.Log("Host started successfully.");
-
-        //            // Scene 전환 플래그 설정
-        //            string sceneName = mapSelectionData.Maps[currentMapIndex].SceneName;
-        //            bool flagSet = await LobbyManager.Instance.SetGameStartFlag(sceneName);
-        //            if (flagSet)
-        //            {
-        //                Debug.Log("Game start flag set successfully.");
-        //            }
-        //            else
-        //            {
-        //                Debug.LogError("Failed to set game start flag.");
-        //            }
-        //        }
-        //        else
-        //        {
-        //            Debug.LogError("Failed to update lobby data.");
-        //        }
-        //    }
-        //    else
-        //    {
-        //        Debug.LogError("Failed to create relay as host.");
-        //    }
-        //}
-        //else
-        //{
-        //    Debug.Log("Joining relay as client...");
-
-        //    string joinCode = LobbyManager.Instance.lobby.Data["JoinCode"].Value;
-        //    bool success = await RelayManager.Instance.JoinRelay(joinCode);
-        //    if (success)
-        //    {
-        //        var (allocationId, key, connectionData, hostConnectionData, dtlsAddress, dtlsPort) = RelayManager.Instance.GetClientConnectionInfo();
-
-        //        UnityTransport transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-        //        transport.SetClientRelayData(dtlsAddress, (ushort)dtlsPort, allocationId, key, connectionData, hostConnectionData, true);
-
-        //        NetworkManager.Singleton.StartClient();
-
-        //        Debug.Log("Client started successfully.");
-        //    }
-        //    else
-        //    {
-        //        Debug.LogError("Failed to join relay as client.");
-        //    }
-        //}
-
-        Debug.Log("Starting game...");
-
-        // 싱글 플레이어 모드에서는 네트워크 관련 코드를 모두 제거합니다.
-
-        // 씬 이름을 mapSelectionData에서 가져옵니다.
-        string sceneName = mapSelectionData.Maps[currentMapIndex].SceneName;
-
-        // 게임 씬을 로드합니다.
-        LoadGameScene(sceneName);
     }
+
 
     private void LoadGameScene(string sceneName)
     {

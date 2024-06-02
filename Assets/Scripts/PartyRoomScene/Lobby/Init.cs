@@ -20,7 +20,6 @@ public class Init : MonoBehaviour
         try
         {
             await UnityServices.InitializeAsync();
-            Debug.Log("Unity Services Initialized");
 
             if (AuthenticationService.Instance.IsSignedIn)
             {
@@ -29,11 +28,9 @@ public class Init : MonoBehaviour
             else
             {
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                Debug.Log($"Signed in: {AuthenticationService.Instance.PlayerId}");
             }
 
             IsAuthenticated = AuthenticationService.Instance.IsSignedIn;
-            Debug.Log($"Authentication Status: {IsAuthenticated}");
         }
         catch (AuthenticationException ex)
         {
