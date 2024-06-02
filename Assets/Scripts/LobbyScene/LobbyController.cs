@@ -82,20 +82,23 @@ public class LobbyController : MonoBehaviour
 
 
     private Lobby currentLobby;
-    public LobbyRoomListUI lobbyRoomListUI;
+    //private LobbyRoomListUI lobbyRoomListUI;
 
     private void OnEnable()
     {
 
         RegisterListeners();
+        //LobbyRoomListUI.OnLobbyRoomListUICreated += RegisterLobbyRoomListUI;
         LobbyManager.OnLobbyUpdated += OnLobbyUpdated;
     }
 
     private void OnDisable()
     {
         UnregisterListeners();
+        //LobbyRoomListUI.OnLobbyRoomListUICreated -= RegisterLobbyRoomListUI;
         LobbyManager.OnLobbyUpdated -= OnLobbyUpdated;
     }
+
     private async void Start()
     {
         await RefreshLobbyList();
@@ -114,7 +117,10 @@ public class LobbyController : MonoBehaviour
         }
 
     }
-
+    //private void RegisterLobbyRoomListUI(LobbyRoomListUI ui)
+    //{
+    //    lobbyRoomListUI = ui;
+    //}
 
     private void RegisterListeners()
     {
@@ -819,8 +825,7 @@ public class LobbyController : MonoBehaviour
         {
             currentLobby = updatedLobby;
             await RefreshPlayerListUI(updatedLobby);
-
-            UpdatePlayerCountUI(currentLobby.Players.Count, currentLobby.MaxPlayers);
+            UpdatePlayerCountUI(updatedLobby.Players.Count, updatedLobby.MaxPlayers);
 
         }
         else
@@ -829,15 +834,7 @@ public class LobbyController : MonoBehaviour
         }
     }
 
-    private void UpdatePlayerCountUI(int currentCount, int maxCount)
-    {
-        // Find all instances of LobbyRoomListUI and update the player count
-        var lobbyRoomListUIs = FindObjectsOfType<LobbyRoomListUI>();
-        foreach (var lobbyRoomListUI in lobbyRoomListUIs)
-        {
-            lobbyRoomListUI.UpdatePlayerCount(currentCount, maxCount);
-        }
-    }
+
 
     private async Task RefreshPlayerListUI(Lobby updatedLobby)
     {
@@ -889,17 +886,15 @@ public class LobbyController : MonoBehaviour
                 }
             }
         }
+    }
 
-        // Update the player count
-        var lobbyRoomListUI = GetComponent<LobbyRoomListUI>();
-        Debug.Log(lobbyRoomListUI);
+    private void UpdatePlayerCountUI(int currentPlayers, int maxPlayers)
+    {
+        var lobbyRoomListUI = FindObjectOfType<LobbyRoomListUI>();
         if (lobbyRoomListUI != null)
         {
-            lobbyRoomListUI.UpdatePlayerCount(updatedLobby.Players.Count, updatedLobby.MaxPlayers);
-        }
-        else
-        {
-            Debug.LogWarning("LobbyRoomListUI component not found.");
+            lobbyRoomListUI.UpdatePlayerCount(currentPlayers, maxPlayers);
+            Debug.Log($"Player count updated to: {currentPlayers}/{maxPlayers}");
         }
     }
 
@@ -1100,7 +1095,6 @@ public class LobbyController : MonoBehaviour
         {
             var lobbies = await LobbyManager.Instance.GetLobbies();
 
-            // 현재 UI 요소가 파괴되지 않았는지 확인합니다.
             if (LobbyRoomListContent != null)
             {
                 foreach (Transform child in LobbyRoomListContent)
@@ -1190,7 +1184,6 @@ public class LobbyController : MonoBehaviour
                     else
                     {
                         
-                        // 비동기 작업 예시: 서버에서 플레이어 이름을 가져오기
                         playerName = await LobbyManager.Instance.FetchPlayerNameFromServer(player.Id);
                         if (!string.IsNullOrEmpty(playerName))
                         {

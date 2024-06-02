@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using TMPro;
 using Unity.Services.Lobbies.Models;
@@ -15,6 +16,13 @@ public class LobbyRoomListUI : MonoBehaviour
     private System.Action<string> onLobbySelected;
 
     private const string DefaultTitle = "파티사냥 가실분";
+
+    public static event Action<LobbyRoomListUI> OnLobbyRoomListUICreated;
+
+    private void OnEnable()
+    {
+        OnLobbyRoomListUICreated?.Invoke(this);
+    }
 
     private void Awake()
     {
@@ -128,10 +136,10 @@ public class LobbyRoomListUI : MonoBehaviour
         onLobbySelected?.Invoke(_lobbyId);
     }
 
-    public void UpdatePlayerCount(int currentCount, int maxCount)
+    public void UpdatePlayerCount(int currentPlayers, int maxPlayers)
     {
-        Debug.Log($"Updating player count: {currentCount}/{maxCount}");
-        playerCountText.text = $"{currentCount}/{maxCount}";
+        playerCountText.text = $"{currentPlayers}/{maxPlayers}";
+        Debug.Log($"Player count updated to: {currentPlayers}/{maxPlayers}");
     }
 
 
