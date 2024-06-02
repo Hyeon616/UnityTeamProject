@@ -24,7 +24,7 @@ public class RegisterLoginManager : MonoBehaviour
 
     IEnumerator Start()
     {
-        // Remote Config °ªÀÌ ·ÎµåµÉ ¶§±îÁö ´ë±â
+        // Remote Config ê°’ì´ ë¡œë“œë  ë•Œê¹Œì§€ ëŒ€ê¸°
         while (string.IsNullOrEmpty(RemoteConfigManager.ServerUrl))
         {
             yield return null;
@@ -33,8 +33,8 @@ public class RegisterLoginManager : MonoBehaviour
         registerUrl = $"{RemoteConfigManager.ServerUrl}/api/register";
         loginUrl = $"{RemoteConfigManager.ServerUrl}/api/login";
 
-        Debug.Log("Register URL: " + registerUrl);
-        Debug.Log("Login URL: " + loginUrl);
+        //Debug.Log("Register URL: " + registerUrl);
+        //Debug.Log("Login URL: " + loginUrl);
     }
 
     public void OnRegisterButtonClicked()
@@ -57,13 +57,13 @@ public class RegisterLoginManager : MonoBehaviour
     {
         if (string.IsNullOrEmpty(RegisterUsernameField.text))
         {
-            ShowFeedback("¾ÆÀÌµğ¸¦ ÀÔ·ÂÇØÁÖ¼¼¿ä");
+            ShowFeedback("ì•„ì´ë””ë¥¼ ì…ë ¥í•´ì£¼ì„¸ìš”");
             yield break;
         }
 
         if (string.IsNullOrEmpty(RegisterPasswordField.text))
         {
-            ShowFeedback("ÆĞ½º¿öµå¸¦ ÀÔ·ÂÇØÁÖ¼¼¿ä");
+            ShowFeedback("íŒ¨ìŠ¤ì›Œë“œë¥¼ ì…ë ¥í•´ì£¼ì„¸ìš”");
             yield break;
         }
 
@@ -87,7 +87,7 @@ public class RegisterLoginManager : MonoBehaviour
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                ShowFeedback("È¸¿ø°¡ÀÔ ¼º°ø");
+                ShowFeedback("íšŒì›ê°€ì… ì„±ê³µ");
             }
             else
             {
@@ -96,16 +96,16 @@ public class RegisterLoginManager : MonoBehaviour
                     var response = JsonUtility.FromJson<ErrorResponse>(request.downloadHandler.text);
                     if (response.errorCode == "USERNAME_EXISTS")
                     {
-                        ShowFeedback("¾ÆÀÌµğ°¡ ÀÌ¹Ì ÀÖ½À´Ï´Ù.");
+                        ShowFeedback("ì•„ì´ë””ê°€ ì´ë¯¸ ìˆìŠµë‹ˆë‹¤.");
                     }
                     else if (response.errorCode == "PLAYERNAME_EXISTS")
                     {
-                        ShowFeedback("ÇÃ·¹ÀÌ¾î ÀÌ¸§ÀÌ ÀÌ¹Ì ÀÖ½À´Ï´Ù.");
+                        ShowFeedback("í”Œë ˆì´ì–´ ì´ë¦„ì´ ì´ë¯¸ ìˆìŠµë‹ˆë‹¤.");
                     }
                 }
                 else if (request.responseCode == 500)
                 {
-                    ShowFeedback("¼­¹ö ¿À·ù");
+                    ShowFeedback("ì„œë²„ ì˜¤ë¥˜");
                 }
                 else
                 {
@@ -120,13 +120,13 @@ public class RegisterLoginManager : MonoBehaviour
     {
         if (string.IsNullOrEmpty(loginUsernameField.text))
         {
-            ShowFeedback("¾ÆÀÌµğ¸¦ ÀÔ·ÂÇØÁÖ¼¼¿ä");
+            ShowFeedback("ì•„ì´ë””ë¥¼ ì…ë ¥í•´ì£¼ì„¸ìš”");
             yield break;
         }
 
         if (string.IsNullOrEmpty(loginPasswordField.text))
         {
-            ShowFeedback("ÆĞ½º¿öµå¸¦ ÀÔ·ÂÇØÁÖ¼¼¿ä");
+            ShowFeedback("íŒ¨ìŠ¤ì›Œë“œë¥¼ ì…ë ¥í•´ì£¼ì„¸ìš”");
             yield break;
         }
 
@@ -167,7 +167,7 @@ public class RegisterLoginManager : MonoBehaviour
                 };
                 UserData.Instance.Character = character;
 
-                ShowFeedback("·Î±×ÀÎ ¼º°ø");
+                ShowFeedback("ë¡œê·¸ì¸ ì„±ê³µ");
                 isLogin = true;
                 yield return new WaitForSeconds(1);
                 loginText.gameObject.SetActive(false);
@@ -178,11 +178,11 @@ public class RegisterLoginManager : MonoBehaviour
             {
                 if (request.responseCode == 500)
                 {
-                    ShowFeedback("¼­¹ö ¿À·ù");
+                    ShowFeedback("ì„œë²„ ì˜¤ë¥˜");
                 }
                 else if (request.responseCode == 404)
                 {
-                    ShowFeedback("¾ÆÀÌµğ°¡ ¾ø°Å³ª ºñ¹Ğ¹øÈ£°¡ Æ²·È½À´Ï´Ù");
+                    ShowFeedback("ì•„ì´ë””ê°€ ì—†ê±°ë‚˜ ë¹„ë°€ë²ˆí˜¸ê°€ í‹€ë ¸ìŠµë‹ˆë‹¤");
                 }
                 else
                 {

@@ -80,6 +80,10 @@ public class LobbyController : MonoBehaviour
     private string selectedLobbyId;
     private int currentMapIndex = 0;
 
+
+    // 디버그용 반드시 지울 것
+    private Lobby currentLobby;
+
     private void OnEnable()
     {
 
@@ -91,6 +95,35 @@ public class LobbyController : MonoBehaviour
     {
         UnregisterListeners();
         LobbyEvents.OnLobbyUpdated -= OnLobbyUpdated;
+    }
+
+    private void Update()
+    {
+        if (LobbyManager.Instance.lobby != null && LobbyManager.Instance.lobby.Data.ContainsKey("GameStart"))
+        {
+            if (LobbyManager.Instance.lobby.Data["GameStart"].Value == "true")
+            {
+                string sceneName = LobbyManager.Instance.lobby.Data["SceneName"].Value;
+                LoadGameScene(sceneName);
+            }
+        }
+
+        // 디버그용 지울 것
+        if (currentLobby != null)
+        {
+            Debug.Log($"Current lobby has {currentLobby.Players.Count} players.");
+            foreach (var player in currentLobby.Players)
+            {
+                if (LobbyManager.Instance.playerNamesCache.TryGetValue(player.Id, out var playerName))
+                {
+                    Debug.Log($"Player ID: {player.Id}, Player Name: {playerName}");
+                }
+                else
+                {
+                    Debug.LogWarning($"Player name not found in cache for player ID: {player.Id}");
+                }
+            }
+        }
     }
 
 
@@ -592,18 +625,7 @@ public class LobbyController : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        if (LobbyManager.Instance.lobby != null && LobbyManager.Instance.lobby.Data.ContainsKey("GameStart"))
-        {
-            if (LobbyManager.Instance.lobby.Data["GameStart"].Value == "true")
-            {
-                string sceneName = LobbyManager.Instance.lobby.Data["SceneName"].Value;
-                LoadGameScene(sceneName);
-            }
-        }
-    }
-
+    
 
 
 
@@ -818,48 +840,44 @@ public class LobbyController : MonoBehaviour
     #region Game Start
     private async void OnLobbyUpdated(Lobby updatedLobby)
     {
-        await UpdatePlayerListUI(updatedLobby);
+        // 디버그 용, 반드시 지울 것 currentLobby = updatedLobby;
+        Debug.Log("OnLobbyUpdated called");
+        currentLobby = updatedLobby;
+
+        await RefreshPlayerListUI(updatedLobby);
     }
 
+    
 
-    private async Task UpdatePlayerListUI(Lobby lobby)
+    private async Task RefreshPlayerListUI(Lobby updatedLobby)
     {
-        if (!ValidateLobbyData(lobby))
+        if (LobbyRoomPlayerListContent == null)
         {
+            Debug.LogWarning("LobbyRoomPlayerListContent is null. Cannot refresh player list.");
             return;
         }
 
-        if (LobbyRoomPlayerListContent != null)
+        Debug.Log("Refreshing player list UI");
+
+        foreach (Transform child in LobbyRoomPlayerListContent)
         {
-            foreach (Transform child in LobbyRoomPlayerListContent)
-            {
-                if (child != null)
-                {
-                    Destroy(child.gameObject);
-                }
-            }
-
-            foreach (var player in lobby.Players)
-            {
-                if (LobbyRoomPlayerListContent != null)
-                {
-                    GameObject playerItem = Instantiate(LobbyPlayerNamePrefab, LobbyRoomPlayerListContent);
-                    var playerUI = playerItem.GetComponent<LobbyPlayerListUI>();
-
-                    if (playerUI == null)
-                    {
-                        Debug.LogError("LobbyPlayerListUI component is missing on LobbyPlayerNamePrefab.");
-                        continue;
-                    }
-
-                    string playerName = await GetPlayerName(player.Id);
-                    playerUI.Initialize(playerName);
-                }
-            }
+            Destroy(child.gameObject);
         }
-        else
+
+        foreach (var player in updatedLobby.Players)
         {
-            Debug.LogWarning("LobbyRoomPlayerListContent is null. Cannot update player list UI.");
+            GameObject playerItem = Instantiate(LobbyPlayerNamePrefab, LobbyRoomPlayerListContent);
+            var playerUI = playerItem.GetComponent<LobbyPlayerListUI>();
+
+            if (LobbyManager.Instance.playerNamesCache.TryGetValue(player.Id, out var playerName))
+            {
+                playerUI.Initialize(playerName);
+                Debug.Log($"Added player to list: {playerName} with Player ID: {player.Id}");
+            }
+            else
+            {
+                Debug.LogWarning($"Player name not found in cache for player ID: {player.Id}");
+            }
         }
     }
 
@@ -1048,7 +1066,7 @@ public class LobbyController : MonoBehaviour
         if (success)
         {
             Debug.Log("Room joined successfully.");
-            await UpdatePlayerListUI(LobbyManager.Instance.lobby);
+            await RefreshPlayerListUI(LobbyManager.Instance.lobby);
         }
         else
         {

@@ -107,37 +107,6 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         }
     }
 
-    //public async Task<Lobby> CreateLobby(string lobbyName, int maxPlayers)
-    //{
-    //    CreateLobbyOptions options = new CreateLobbyOptions
-    //    {
-    //        IsPrivate = false,
-    //        Data = new Dictionary<string, DataObject>
-    //        {
-    //            // 예: 초기 데이터를 설정하려면 여기에 추가
-    //            // { "exampleKey", new DataObject(DataObject.VisibilityOptions.Member, "exampleValue") }
-    //        }
-    //    };
-
-    //    try
-    //    {
-    //        lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
-    //        Debug.Log($"Lobby created with ID: {lobby.Id}");
-
-    //        StartHeartbeat();
-    //        StartRefreshLobby();
-
-    //        return lobby;
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        Debug.LogError($"Failed to create lobby: {ex.Message}");
-    //        return null;
-    //    }
-    //}
-
-
-
     public async Task<List<Lobby>> GetLobbies()
     {
         try
@@ -201,45 +170,6 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         }
     }
 
-    //public async Task<bool> JoinLobby(string lobbyId)
-    //{
-    //    try
-    //    {
-    //        Dictionary<string, PlayerDataObject> playerData = new Dictionary<string, PlayerDataObject>();
-    //        if (UserData.Instance != null && UserData.Instance.Character != null)
-    //        {
-    //            playerData["PlayerName"] = new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, UserData.Instance.Character.PlayerName);
-    //        }
-
-    //        var options = new JoinLobbyByIdOptions
-    //        {
-    //            Player = new Player(AuthenticationService.Instance.PlayerId, null, playerData)
-    //        };
-
-
-    //        lobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId);
-    //        Debug.Log($"Joined lobby with ID: {lobby.Id}");
-
-    //        StartHeartbeat();
-    //        StartRefreshLobby();
-
-    //        if (lobby != null)
-    //        {
-    //            CachePlayerNames(lobby);
-    //        }
-    //        else
-    //        {
-    //            Debug.LogError("Lobby is null after joining.");
-    //        }
-
-    //        return true;
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        Debug.LogError($"Failed to join lobby: {ex.Message}");
-    //        return false;
-    //    }
-    //}
 
     public async Task<bool> LeaveLobby()
     {
@@ -298,14 +228,14 @@ public class LobbyManager : SceneSingleton<LobbyManager>
     {
         while (true)
         {
-            var sendHeartbeatTask = SendHeartbeatPingAsync(lobbyId);
-            yield return new WaitUntil(() => sendHeartbeatTask.IsCompleted);
-
-            if (sendHeartbeatTask.IsFaulted)
+            try
             {
-                Debug.LogError($"Failed to send heartbeat: {sendHeartbeatTask.Exception}");
+                LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
             }
-
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to send heartbeat: {ex.Message}");
+            }
             yield return new WaitForSecondsRealtime(waitTimeSeconds);
         }
     }
@@ -329,13 +259,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
             StopCoroutine(refreshLobbyCoroutine);
         }
 
-        if (lobby == null)
-        {
-            Debug.LogError("Lobby is null in StartRefreshLobby.");
-            return;
-        }
-
-        refreshLobbyCoroutine = StartCoroutine(RefreshLobbyCoroutine(lobby.Id, 5f));
+        refreshLobbyCoroutine = StartCoroutine(RefreshLobbyCoroutine(lobby.Id, 2f));
     }
 
     private void StopRefreshLobby()
@@ -361,6 +285,8 @@ public class LobbyManager : SceneSingleton<LobbyManager>
             }
         }
     }
+
+
     private async Task RefreshLobbyAsync(string lobbyId)
     {
         try
@@ -381,11 +307,25 @@ public class LobbyManager : SceneSingleton<LobbyManager>
                 return;
             }
 
-            if (newLobby.LastUpdated > lobby.LastUpdated)
+            bool playersChanged = newLobby.Players.Count != lobby.Players.Count;
+
+            if (!playersChanged)
+            {
+                for (int i = 0; i < newLobby.Players.Count; i++)
+                {
+                    if (newLobby.Players[i].Id != lobby.Players[i].Id)
+                    {
+                        playersChanged = true;
+                        break;
+                    }
+                }
+            }
+
+            if (playersChanged)
             {
                 lobby = newLobby;
                 OnLobbyUpdated?.Invoke(lobby);
-                Debug.Log("Lobby successfully refreshed.");
+                Debug.Log("Lobby successfully refreshed and players updated.");
             }
             else
             {
@@ -555,5 +495,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
 
         return null;
     }
+
+
 
 }

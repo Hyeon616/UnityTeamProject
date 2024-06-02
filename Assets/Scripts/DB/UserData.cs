@@ -18,9 +18,9 @@ public class UserData : Singleton<UserData>
     {
         yield return new WaitUntil(() => !string.IsNullOrEmpty(RemoteConfigManager.ServerUrl));
 
-        Debug.Log($"Server URL: {RemoteConfigManager.ServerUrl}");
-        Debug.Log($"Save Data URL: {SaveDataUrl}");
-        Debug.Log($"Load Data URL: {LoadDataUrl}");
+        //Debug.Log($"Server URL: {RemoteConfigManager.ServerUrl}");
+        //Debug.Log($"Save Data URL: {SaveDataUrl}");
+        //Debug.Log($"Load Data URL: {LoadDataUrl}");
     }
 
     
