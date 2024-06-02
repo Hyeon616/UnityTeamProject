@@ -260,7 +260,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
             StopCoroutine(refreshLobbyCoroutine);
         }
 
-        refreshLobbyCoroutine = StartCoroutine(RefreshLobbyCoroutine(lobby.Id, 3f));
+        refreshLobbyCoroutine = StartCoroutine(RefreshLobbyCoroutine(lobby.Id, 2f));
     }
 
     private void StopRefreshLobby()
@@ -292,7 +292,9 @@ public class LobbyManager : SceneSingleton<LobbyManager>
     {
         try
         {
+            Debug.Log($"Attempting to refresh lobby with ID: {lobbyId}");
             Lobby newLobby = await LobbyService.Instance.GetLobbyAsync(lobbyId);
+            Debug.Log("GetLobbyAsync call completed.");
 
             if (newLobby == null)
             {
@@ -306,24 +308,11 @@ public class LobbyManager : SceneSingleton<LobbyManager>
                 return;
             }
 
-            bool playersChanged = newLobby.Players.Count != lobby.Players.Count;
-
-            if (!playersChanged)
-            {
-                for (int i = 0; i < newLobby.Players.Count; i++)
-                {
-                    if (newLobby.Players[i].Id != lobby.Players[i].Id)
-                    {
-                        playersChanged = true;
-                        break;
-                    }
-                }
-            }
-
-            if (playersChanged || newLobby.LastUpdated > lobby.LastUpdated)
+            if (newLobby.LastUpdated > lobby.LastUpdated)
             {
                 lobby = newLobby;
                 OnLobbyUpdated?.Invoke(lobby);
+                Debug.Log("Lobby successfully refreshed and players updated, invoking OnLobbyUpdated.");
             }
             else
             {
@@ -463,12 +452,13 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         string url = $"{RemoteConfigManager.ServerUrl}/api/players/ugs/{playerId}";
         using (UnityWebRequest request = UnityWebRequest.Get(url))
         {
-            
+            Debug.Log($"Sending request to URL: {url}");
             await request.SendWebRequestAsync();
 
             if (request.result == UnityWebRequest.Result.Success)
             {
                 string jsonResult = request.downloadHandler.text;
+                Debug.Log($"Received response: {jsonResult}");
                 var playerData = JsonUtility.FromJson<CharacterData>(jsonResult);
                 if (playerData != null)
                 {
