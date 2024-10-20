@@ -1,9 +1,10 @@
 using DG.Tweening;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Networking;
 
 public class RegisterLoginManager : MonoBehaviour
 {
@@ -15,36 +16,32 @@ public class RegisterLoginManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI feedbackText;
     [SerializeField] private GameObject authPanel;
     [SerializeField] private TextMeshProUGUI loginText;
-    
+
     private string registerUrl;
     private string loginUrl;
+
+    private ServerConnector serverConnector;
 
     public static bool isLogin = false;
     public static event Action OnLoginSuccess;
 
-    IEnumerator Start()
+    private void Start()
     {
-        // Remote Config 값이 로드될 때까지 대기
-        while (string.IsNullOrEmpty(RemoteConfigManager.ServerUrl))
+        serverConnector = FindObjectOfType<ServerConnector>();
+        if (serverConnector == null)
         {
-            yield return null;
+            Debug.Log("serverConnector가 없습니다.");
         }
-
-        registerUrl = $"{RemoteConfigManager.ServerUrl}/api/register";
-        loginUrl = $"{RemoteConfigManager.ServerUrl}/api/login";
-
-        //Debug.Log("Register URL: " + registerUrl);
-        //Debug.Log("Login URL: " + loginUrl);
     }
 
     public void OnRegisterButtonClicked()
     {
-        StartCoroutine(RegisterUser());
+        StartCoroutine(SendRequest("register"));
     }
 
     public void OnLoginButtonClicked()
     {
-        StartCoroutine(LoginUser());
+        StartCoroutine(SendRequest("login"));
     }
 
     public void OnCancelButtonClicked()
@@ -53,120 +50,95 @@ public class RegisterLoginManager : MonoBehaviour
         loginText.gameObject.SetActive(true);
     }
 
-    IEnumerator RegisterUser()
+    private IEnumerator SendRequest(string action)
     {
-        if (string.IsNullOrEmpty(RegisterUsernameField.text))
+        string id = null;
+        string password = null;
+        string playername = null;
+
+        if (action == "register")
         {
-            ShowFeedback("아이디를 입력해주세요");
-            yield break;
-        }
-
-        if (string.IsNullOrEmpty(RegisterPasswordField.text))
-        {
-            ShowFeedback("패스워드를 입력해주세요");
-            yield break;
-        }
-
-        var formData = new RegisterData
-        {
-            Username = RegisterUsernameField.text,
-            Password = RegisterPasswordField.text,
-            PlayerName = RegisterPlayerNameField.text
-        };
-
-        string jsonData = JsonUtility.ToJson(formData);
-
-        using (UnityWebRequest request = new UnityWebRequest(registerUrl, "POST"))
-        {
-            byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
-            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-            request.downloadHandler = new DownloadHandlerBuffer();
-            request.SetRequestHeader("Content-Type", "application/json");
-
-            yield return request.SendWebRequest();
-
-            if (request.result == UnityWebRequest.Result.Success)
+            id = RegisterUsernameField.text;
+            password = RegisterPasswordField.text;
+            playername = RegisterPlayerNameField.text;
+            if (string.IsNullOrEmpty(id))
             {
-                ShowFeedback("회원가입 성공");
+                ShowFeedback("아이디를 입력해주세요.");
+                yield break;
             }
-            else
+
+            if (string.IsNullOrEmpty(password))
             {
-                if (request.responseCode == 409)
-                {
-                    var response = JsonUtility.FromJson<ErrorResponse>(request.downloadHandler.text);
-                    if (response.errorCode == "USERNAME_EXISTS")
-                    {
-                        ShowFeedback("아이디가 이미 있습니다.");
-                    }
-                    else if (response.errorCode == "PLAYERNAME_EXISTS")
-                    {
-                        ShowFeedback("플레이어 이름이 이미 있습니다.");
-                    }
-                }
-                else if (request.responseCode == 500)
-                {
-                    ShowFeedback("서버 오류");
-                }
-                else
-                {
-                    ShowFeedback("Error: " + request.error);
-                }
+                ShowFeedback("패스워드를 입력해주세요.");
+                yield break;
+            }
+
+            if (string.IsNullOrEmpty(playername))
+            {
+                ShowFeedback("닉네임을 입력해주세요.");
+                yield break;
+            }
+
+        }
+        else if (action == "login")
+        {
+            id = loginUsernameField.text;
+            password = loginPasswordField.text;
+            if (string.IsNullOrEmpty(id))
+            {
+                ShowFeedback("아이디를 입력해주세요.");
+                yield break;
+            }
+
+            if (string.IsNullOrEmpty(password))
+            {
+                ShowFeedback("패스워드를 입력해주세요.");
+                yield break;
             }
         }
+
+        var request = new { action, id, password, playername };
+        string jsonRequest = JsonConvert.SerializeObject(request);
+
+        yield return StartCoroutine(SendMessage(jsonRequest));
 
     }
 
-    IEnumerator LoginUser()
+
+    IEnumerator SendMessage(string message)
     {
-        if (string.IsNullOrEmpty(loginUsernameField.text))
+        var task = serverConnector.SendMessage(message);
+        yield return new WaitUntil(() => task.IsCompleted);
+
+        if (task.Exception != null)
         {
-            ShowFeedback("아이디를 입력해주세요");
+            Debug.Log($"서버 전송 실패 : {task.Exception.Message}");
+            ShowFeedback("서버 연결 오류");
             yield break;
         }
 
-        if (string.IsNullOrEmpty(loginPasswordField.text))
+        string jsonResponse = task.Result;
+
+        if (string.IsNullOrEmpty(jsonResponse))
         {
-            ShowFeedback("패스워드를 입력해주세요");
+            ShowFeedback("서버 응답 없음");
             yield break;
         }
 
-        var formData = new LoginData
+        var response = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonResponse);
+        if (response.TryGetValue("status", out object status) && status.ToString() == "success")
         {
-            Username = loginUsernameField.text,
-            Password = loginPasswordField.text
-        };
+            response.TryGetValue("action", out object action);
+            string actionType = action.ToString();
 
-        string jsonData = JsonUtility.ToJson(formData);
+            Debug.Log(actionType);
 
-        using (UnityWebRequest request = new UnityWebRequest(loginUrl, "POST"))
-        {
-            byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
-            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-            request.downloadHandler = new DownloadHandlerBuffer();
-            request.SetRequestHeader("Content-Type", "application/json");
-
-            yield return request.SendWebRequest();
-
-            if (request.result == UnityWebRequest.Result.Success)
+            if (actionType.ToString() == "register")
             {
-                var response = JsonUtility.FromJson<LoginResponse>(request.downloadHandler.text);
-                UserData.Instance.UserId = response.UserId;
-
-                CharacterData character = new CharacterData
-                {
-                    PlayerId = response.Character.PlayerId,
-                    PlayerName = response.Character.PlayerName,
-                    Gems = response.Character.Gems,
-                    Coins = response.Character.Coins,
-                    MaxHealth = response.Character.MaxHealth,
-                    HealthEnhancement = response.Character.HealthEnhancement,
-                    AttackPower = response.Character.AttackPower,
-                    AttackEnhancement = response.Character.AttackEnhancement,
-                    WeaponEnhancement = response.Character.WeaponEnhancement,
-                    ArmorEnhancement = response.Character.ArmorEnhancement
-                };
-                UserData.Instance.Character = character;
-
+                ShowFeedback("회원가입 성공");
+            }
+            else if (actionType.ToString() == "login")
+            {
                 ShowFeedback("로그인 성공");
                 isLogin = true;
                 yield return new WaitForSeconds(1);
@@ -174,21 +146,15 @@ public class RegisterLoginManager : MonoBehaviour
                 authPanel.SetActive(false);
                 OnLoginSuccess?.Invoke();
             }
-            else
-            {
-                if (request.responseCode == 500)
-                {
-                    ShowFeedback("서버 오류");
-                }
-                else if (request.responseCode == 404)
-                {
-                    ShowFeedback("아이디가 없거나 비밀번호가 틀렸습니다");
-                }
-                else
-                {
-                    ShowFeedback("Error: " + request.error);
-                }
-            }
+
+        }
+        else if (response.TryGetValue("message", out object responseMessage))
+        {
+            ShowFeedback($"에러 : {responseMessage}");
+        }
+        else
+        {
+            ShowFeedback("알 수 없는 오류 발생");
         }
     }
 
@@ -197,5 +163,7 @@ public class RegisterLoginManager : MonoBehaviour
         feedbackText.text = message;
         feedbackText.DOFade(1, 1).OnComplete(() => feedbackText.DOFade(0, 2));
     }
+
+
 
 }

@@ -12,12 +12,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 469c24fdb3bd6431b92cc1465bd9166b, type: 3}
   m_Name: RemoteConfigDataStoreAsset
   m_EditorClassIdentifier: 
-  _rsKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"4b4ad283-b749-4125-b1e0-10f2dc5f488e\"\r\n   
+  _rsKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"412924d6-d684-4029-8a9b-0638690d54e0\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"server_url\",\r\n      \"type\": \"string\",\r\n     
-    \"value\": \"http://192.168.0.90:3000\"\r\n    }\r\n  }\r\n]"
-  _rsLastCachedKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"4b4ad283-b749-4125-b1e0-10f2dc5f488e\"\r\n   
+    \"value\": \"43.203.127.106\"\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n     
+    \"entityId\": \"7281bc73-d558-4747-9428-f1b0a5b89fa2\"\r\n    },\r\n    \"rs\":
+    {\r\n      \"key\": \"server_dbname\",\r\n      \"type\": \"string\",\r\n     
+    \"value\": \"test\"\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"49b0aa14-5b39-492c-9a4a-c30d4a496a83\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"server_uid\",\r\n      \"type\": \"string\",\r\n      \"value\": \"root\"\r\n   
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"e164328d-68dc-4fe6-9c33-4cdf1a750ea7\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"server_pwd\",\r\n      \"type\": \"string\",\r\n     
+    \"value\": \"1q2w3e4r!\"\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n     
+    \"entityId\": \"71e51589-f0cc-4c5e-ae10-f6e64b79475d\"\r\n    },\r\n    \"rs\":
+    {\r\n      \"key\": \"server_port\",\r\n      \"type\": \"string\",\r\n     
+    \"value\": \"3306\"\r\n    }\r\n  }\r\n]"
+  _rsLastCachedKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"412924d6-d684-4029-8a9b-0638690d54e0\"\r\n   
     },\r\n    \"rs\": {\r\n      \"key\": \"server_url\",\r\n      \"type\": \"string\",\r\n     
-    \"value\": \"http://192.168.0.90:3000\"\r\n    }\r\n  }\r\n]"
+    \"value\": \"43.203.127.106\"\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n     
+    \"entityId\": \"7281bc73-d558-4747-9428-f1b0a5b89fa2\"\r\n    },\r\n    \"rs\":
+    {\r\n      \"key\": \"server_dbname\",\r\n      \"type\": \"string\",\r\n     
+    \"value\": \"test\"\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"49b0aa14-5b39-492c-9a4a-c30d4a496a83\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"server_uid\",\r\n      \"type\": \"string\",\r\n      \"value\": \"root\"\r\n   
+    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"e164328d-68dc-4fe6-9c33-4cdf1a750ea7\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"server_pwd\",\r\n      \"type\": \"string\",\r\n     
+    \"value\": \"1q2w3e4r!\"\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n     
+    \"entityId\": \"71e51589-f0cc-4c5e-ae10-f6e64b79475d\"\r\n    },\r\n    \"rs\":
+    {\r\n      \"key\": \"server_port\",\r\n      \"type\": \"string\",\r\n     
+    \"value\": \"3306\"\r\n    }\r\n  }\r\n]"
   _environments: "[\r\n  {\r\n    \"projectId\": \"87b01f00-f9eb-4aae-b632-910f65b61c19\",\r\n   
     \"name\": \"production\",\r\n    \"id\": \"8c250188-fd09-4e9e-bdfb-57b8353f8dbd\",\r\n   
     \"isDefault\": true,\r\n    \"createdAt\": \"2024-05-11T11:51:36Z\",\r\n    \"updatedAt\":
