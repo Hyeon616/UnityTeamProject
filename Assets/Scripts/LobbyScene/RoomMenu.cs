@@ -23,7 +23,7 @@ public class RoomMenu : MonoBehaviour
 
     private string selectedRoomName;
     private Dictionary<string, GameObject> roomListItems = new Dictionary<string, GameObject>();
-
+    private bool isInRoom = false;
 
     private void OnEnable()
     {
@@ -44,6 +44,12 @@ public class RoomMenu : MonoBehaviour
     // 방 생성
     private async void RoomCodeSubmit()
     {
+        if (isInRoom)
+        {
+            Debug.Log("이미 방에 있습니다.");
+            return;
+        }
+
         // 방 생성
         string roomName = string.IsNullOrEmpty(lobbyRoomCodeInputField.text) ? "파티사냥 하실분" : lobbyRoomCodeInputField.text;
         var createRoomRequest = new
@@ -62,11 +68,10 @@ public class RoomMenu : MonoBehaviour
         if (responseData["status"].ToString() == "success")
         {
             Debug.Log($"Room created: {roomName}");
-            // TODO: UI
             JoinMenuUI.SetActive(false);
             lobbyRoomUI.SetActive(true);
             BackRoomButton.gameObject.SetActive(false);
-
+            isInRoom = true;
             await GetRoomList();
         }
         else
@@ -94,6 +99,7 @@ public class RoomMenu : MonoBehaviour
             JoinMenuUI.SetActive(true);
             lobbyRoomUI.SetActive(false);
             BackRoomButton.gameObject.SetActive(true);
+            isInRoom = false;
             // 방 목록 업데이트
             await GetRoomList();
         }
@@ -123,6 +129,12 @@ public class RoomMenu : MonoBehaviour
 
     public async void JoinRoom(string roomName)
     {
+        if (isInRoom)
+        {
+            Debug.Log("이미 방에 있습니다.");
+            return;
+        }
+
         var joinRoomRequest = new
         {
             action = "join_room",
@@ -140,8 +152,8 @@ public class RoomMenu : MonoBehaviour
             JoinMenuUI.SetActive(false);
             lobbyRoomUI.SetActive(true);
             BackRoomButton.gameObject.SetActive(false);
-            joinRoomButton.gameObject.SetActive(false); 
-
+            joinRoomButton.gameObject.SetActive(false);
+            isInRoom = true;
             await GetRoomList();
         }
         else
