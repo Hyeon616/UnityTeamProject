@@ -58,7 +58,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type", "application/json");
 
-            await request.SendWebRequestAsync();
+          //  await request.SendWebRequestAsync();
 
             //if (request.result == UnityWebRequest.Result.Success)
             //{
@@ -447,7 +447,7 @@ public class LobbyManager : SceneSingleton<LobbyManager>
         string url = $"{RemoteConfigManager.ServerUrl}/api/players/ugs/{playerId}";
         using (UnityWebRequest request = UnityWebRequest.Get(url))
         {
-            await request.SendWebRequestAsync();
+            //await request.SendWebRequestAsync();
 
             if (request.result == UnityWebRequest.Result.Success)
             {

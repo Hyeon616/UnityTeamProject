@@ -17,22 +17,9 @@ public class RegisterLoginManager : MonoBehaviour
     [SerializeField] private GameObject authPanel;
     [SerializeField] private TextMeshProUGUI loginText;
 
-    private string registerUrl;
-    private string loginUrl;
-
-    private ServerConnector serverConnector;
 
     public static bool isLogin = false;
     public static event Action OnLoginSuccess;
-
-    private void Start()
-    {
-        serverConnector = FindObjectOfType<ServerConnector>();
-        if (serverConnector == null)
-        {
-            Debug.Log("serverConnector가 없습니다.");
-        }
-    }
 
     public void OnRegisterButtonClicked()
     {
@@ -107,7 +94,7 @@ public class RegisterLoginManager : MonoBehaviour
 
     IEnumerator SendMessage(string message)
     {
-        var task = serverConnector.SendMessage(message);
+        var task = ServerConnector.Instance.SendMessage(message);
         yield return new WaitUntil(() => task.IsCompleted);
 
         if (task.Exception != null)
@@ -131,8 +118,6 @@ public class RegisterLoginManager : MonoBehaviour
             response.TryGetValue("action", out object action);
             string actionType = action.ToString();
 
-            Debug.Log(actionType);
-
             if (actionType.ToString() == "register")
             {
                 ShowFeedback("회원가입 성공");
@@ -141,7 +126,23 @@ public class RegisterLoginManager : MonoBehaviour
             {
                 ShowFeedback("로그인 성공");
                 isLogin = true;
+
+                if (response.TryGetValue("userId", out object userId) &&
+                        response.TryGetValue("character", out object character))
+                {
+
+                    CharacterData characterData = JsonConvert.DeserializeObject<CharacterData>(character.ToString());
+
+                    UserData.Instance.LoadPlayerData(userId.ToString(), characterData);
+                }
+
+
+
                 yield return new WaitForSeconds(1);
+
+                // 임시
+                SceneLoader.Instance.LoadSceneAsync("LobbyScene");
+
                 loginText.gameObject.SetActive(false);
                 authPanel.SetActive(false);
                 OnLoginSuccess?.Invoke();

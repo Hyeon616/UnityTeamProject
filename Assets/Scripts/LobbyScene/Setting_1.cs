@@ -1,6 +1,4 @@
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 public class Setting_1 : MonoBehaviour
 {
     public static void JewelUpGradeATK()
@@ -14,7 +12,7 @@ public class Setting_1 : MonoBehaviour
         }
     }
 
-    // °ø°İ·ÂÀ» º¸¼®À¸·Î ´Ù¿î±×·¹ÀÌµå
+    // ê³µê²©ë ¥ì„ ë³´ì„ìœ¼ë¡œ ë‹¤ìš´ê·¸ë ˆì´ë“œ
     public static void JewelDownGradeATK()
     {
         if (UserData.Instance.Character.AttackPower > 0 && UserData.Instance.Character.AttackEnhancement > 0)
@@ -26,7 +24,7 @@ public class Setting_1 : MonoBehaviour
         }
     }
 
-    // Ã¼·ÂÀ» º¸¼®À¸·Î ¾÷±×·¹ÀÌµå
+    // ì²´ë ¥ì„ ë³´ì„ìœ¼ë¡œ ì—…ê·¸ë ˆì´ë“œ
     public static void JewelUpGradeHP()
     {
         if (UserData.Instance.Character.Gems > UserData.Instance.Character.HealthEnhancement * 5)
@@ -38,7 +36,7 @@ public class Setting_1 : MonoBehaviour
         }
     }
 
-    // Ã¼·ÂÀ» º¸¼®À¸·Î ´Ù¿î±×·¹ÀÌµå
+    // ì²´ë ¥ì„ ë³´ì„ìœ¼ë¡œ ë‹¤ìš´ê·¸ë ˆì´ë“œ
     public static void JewelDownGradeHP()
     {
         if (UserData.Instance.Character.MaxHealth > 0 && UserData.Instance.Character.HealthEnhancement > 0)
@@ -50,7 +48,7 @@ public class Setting_1 : MonoBehaviour
         }
     }
 
-    // °ø°İ·ÂÀ» ÄÚÀÎÀ¸·Î ¾÷±×·¹ÀÌµå
+    // ê³µê²©ë ¥ì„ ì½”ì¸ìœ¼ë¡œ ì—…ê·¸ë ˆì´ë“œ
     public static void CoinUpGradeATK()
     {
         if (UserData.Instance.Character.Coins > UserData.Instance.Character.AttackEnhancement * 5)
@@ -62,7 +60,7 @@ public class Setting_1 : MonoBehaviour
         }
     }
 
-    // °ø°İ·ÂÀ» ÄÚÀÎÀ¸·Î ´Ù¿î±×·¹ÀÌµå
+    // ê³µê²©ë ¥ì„ ì½”ì¸ìœ¼ë¡œ ë‹¤ìš´ê·¸ë ˆì´ë“œ
     public static void CoinDownGradeATK()
     {
         if (UserData.Instance.Character.AttackPower > 0 && UserData.Instance.Character.AttackEnhancement > 0)
@@ -74,7 +72,7 @@ public class Setting_1 : MonoBehaviour
         }
     }
 
-    // Ã¼·ÂÀ» ÄÚÀÎÀ¸·Î ¾÷±×·¹ÀÌµå
+    // ì²´ë ¥ì„ ì½”ì¸ìœ¼ë¡œ ì—…ê·¸ë ˆì´ë“œ
     public static void CoinUpGradeHP()
     {
         if (UserData.Instance.Character.Coins > UserData.Instance.Character.HealthEnhancement * 5)
@@ -86,7 +84,7 @@ public class Setting_1 : MonoBehaviour
         }
     }
 
-    // Ã¼·ÂÀ» ÄÚÀÎÀ¸·Î ´Ù¿î±×·¹ÀÌµå
+    // ì²´ë ¥ì„ ì½”ì¸ìœ¼ë¡œ ë‹¤ìš´ê·¸ë ˆì´ë“œ
     public static void CoinDownGradeHP()
     {
         if (UserData.Instance.Character.MaxHealth > 0 && UserData.Instance.Character.HealthEnhancement > 0)
@@ -98,14 +96,14 @@ public class Setting_1 : MonoBehaviour
         }
     }
 
-    // ÄÚÀÎ Áõ°¡
+    // ì½”ì¸ ì¦ê°€
     public static void PlusCoins()
     {
         UserData.Instance.Character.Coins++;
         UserData.Instance.SavePlayerData();
     }
 
-    // º¸¼® Áõ°¡
+    // ë³´ì„ ì¦ê°€
     public static void PlusJewels()
     {
         UserData.Instance.Character.Gems++;

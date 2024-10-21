@@ -13,13 +13,32 @@ public class InfoView : MonoBehaviour
     [SerializeField] private TextMeshProUGUI jewelHPUpgradetext;
     [SerializeField] private TextMeshProUGUI coinAtkUpgradetext;
     [SerializeField] private TextMeshProUGUI coinHPUpgradetext;
+    [SerializeField] private TextMeshProUGUI PlayerNameText;
 
-    private void Update()
+    private void OnEnable()
+    {
+        UserData.Instance.OnCharacterDataChanged += UpdateUI;
+    }
+
+    private void OnDisable()
+    {
+        
+        UserData.Instance.OnCharacterDataChanged -= UpdateUI;
+    }
+
+    private void Start()
+    {
+        UpdateUI();
+    }
+
+
+    private void UpdateUI()
     {
         if (UserData.Instance != null && UserData.Instance.Character != null)
         {
             var character = UserData.Instance.Character;
 
+            PlayerNameText.text = $"{character.PlayerName}";
             cointext.text = $" {character.Coins}";
             jeweltext.text = $" {character.Gems}";
             jewelAtkUpgradetext.text = $"-{character.AttackEnhancement}";
@@ -36,4 +55,5 @@ public class InfoView : MonoBehaviour
             Debug.LogWarning("UserData.Instance or UserData.Instance.Character is null.");
         }
     }
+
 }
