@@ -21,15 +21,14 @@ public class RoomMenu : MonoBehaviour
     [SerializeField] private TMP_InputField lobbyRoomCodeInputField;
     [SerializeField] private Button BackRoomButton;
 
-
+    private string selectedRoomName;
     private Dictionary<string, GameObject> roomListItems = new Dictionary<string, GameObject>();
 
 
     private void OnEnable()
     {
         leaveRoomButton.onClick.AddListener(OnClickedLeaveRoomButton);
-        //TODO : JoinRoom
-        //joinRoomButton.onClick.AddListener(JoinRoom);
+        joinRoomButton.onClick.AddListener(OnClickedJoinRoomButton);
         lobbyRoomCodeSubmit.onClick.AddListener(RoomCodeSubmit);
 
     }
@@ -37,7 +36,7 @@ public class RoomMenu : MonoBehaviour
     private void OnDisable()
     {
         leaveRoomButton.onClick.RemoveListener(OnClickedLeaveRoomButton);
-        //joinRoomButton.onClick.RemoveListener(JoinRoom);
+        joinRoomButton.onClick.RemoveListener(OnClickedJoinRoomButton);
         lobbyRoomCodeSubmit.onClick.RemoveListener(RoomCodeSubmit);
     }
 
@@ -106,21 +105,20 @@ public class RoomMenu : MonoBehaviour
 
     private void ShowRoomPlayers(string roomName, List<string> players)
     {
-        // 기존 플레이어 목록을 지웁니다.
+        selectedRoomName = roomName; // 선택된 방 이름 저장
+
         foreach (Transform child in LobbyRoomPlayerListContent)
         {
             Destroy(child.gameObject);
         }
 
-        // 새로운 플레이어 목록을 추가합니다.
         foreach (string player in players)
         {
             GameObject playerItem = Instantiate(LobbyPlayerNamePrefab, LobbyRoomPlayerListContent);
             playerItem.GetComponentInChildren<TextMeshProUGUI>().text = player;
         }
 
-
-
+        joinRoomButton.gameObject.SetActive(true);
     }
 
     public async void JoinRoom(string roomName)
@@ -142,12 +140,25 @@ public class RoomMenu : MonoBehaviour
             JoinMenuUI.SetActive(false);
             lobbyRoomUI.SetActive(true);
             BackRoomButton.gameObject.SetActive(false);
+            joinRoomButton.gameObject.SetActive(false); 
 
             await GetRoomList();
         }
         else
         {
             Debug.LogError($"Failed to join room: {responseData["message"]}");
+        }
+    }
+
+    private void OnClickedJoinRoomButton()
+    {
+        if (!string.IsNullOrEmpty(selectedRoomName))
+        {
+            JoinRoom(selectedRoomName);
+        }
+        else
+        {
+            Debug.LogError("No room selected");
         }
     }
 
@@ -192,5 +203,7 @@ public class RoomMenu : MonoBehaviour
             // 방 버튼에 클릭 이벤트 추가
             roomListUI.Button_LobbyRoomListPrefab.onClick.AddListener(() => ShowRoomPlayers(roomName, players));
         }
+
+        joinRoomButton.gameObject.SetActive(false);
     }
 }
