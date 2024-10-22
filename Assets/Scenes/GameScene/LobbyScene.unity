@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.1650237, g: 0.2168225, b: 0.30830383, a: 1}
+  m_IndirectSpecularColor: {r: 0.16501248, g: 0.21609387, b: 0.30821332, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1439,50 +1439,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 418768, guid: 03e0df70127d9f84c9b8a07134bd0df9, type: 3}
   m_PrefabInstance: {fileID: 71256005}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &77162473
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 77162475}
-  - component: {fileID: 77162474}
-  m_Layer: 0
-  m_Name: LobbyManager (Singleton)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &77162474
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 77162473}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e3bc0e56296374b40ad9856be95dea1e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!4 &77162475
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 77162473}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 6
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &96091342
 GameObject:
   m_ObjectHideFlags: 0
@@ -4993,7 +4949,7 @@ GameObject:
   - component: {fileID: 416285932}
   - component: {fileID: 416285931}
   m_Layer: 5
-  m_Name: JoinRoom
+  m_Name: ParticipateLobby
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8586,7 +8542,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6337388325996369901, guid: 946b9f039810bb544823cab33d428852, type: 3}
       propertyPath: m_RootOrder
-      value: 8
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 6337388325996369901, guid: 946b9f039810bb544823cab33d428852, type: 3}
       propertyPath: m_LocalPosition.x
@@ -11326,7 +11282,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 9
+  m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &810117149
 MonoBehaviour:
@@ -26468,7 +26424,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   createRoomButton: {fileID: 950111656}
-  joinRoomButton: {fileID: 416285933}
+  ParticipateRoomButton: {fileID: 416285933}
   backToGameStart: {fileID: 2919110505526662903}
   JoinMenuUI: {fileID: 290195465}
   lobbyRoomUI: {fileID: 1916867341}
@@ -26508,12 +26464,14 @@ MonoBehaviour:
   LobbyRoomListPrefab: {fileID: 8641143531889064102, guid: 8be525457bc7d03458528af6e9d43914, type: 3}
   LobbyPlayerNamePrefab: {fileID: 8641143531889064102, guid: 93f80b966edc46943b67909ef97088d0, type: 3}
   leaveRoomButton: {fileID: 273573399}
+  joinRoomButton: {fileID: 860779498}
   startSceneButton: {fileID: 1048890649}
   lobbyRoomUI: {fileID: 1916867341}
   JoinMenuUI: {fileID: 290195465}
   lobbyRoomCodeSubmit: {fileID: 1036866897}
   lobbyRoomCodeInputField: {fileID: 704281956}
   BackRoomButton: {fileID: 591151689}
+  ParticipateLobbyButton: {fileID: 416285933}
 --- !u!114 &1909029488
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30456,7 +30414,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1411090004535548354, guid: 58581bb6f6931a14da8498b8561d4553, type: 3}
       propertyPath: m_RootOrder
-      value: 7
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 1411090004535548354, guid: 58581bb6f6931a14da8498b8561d4553, type: 3}
       propertyPath: m_AnchorMax.x

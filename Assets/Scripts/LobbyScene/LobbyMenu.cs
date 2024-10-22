@@ -10,7 +10,7 @@ public class LobbyMenu : MonoBehaviour
 {
     [Header("Game Start")]
     [SerializeField] private Button createRoomButton;
-    [SerializeField] private Button joinRoomButton;
+    [SerializeField] private Button ParticipateRoomButton;
 
     [Header("Lobby")]
     [SerializeField] private Button backToGameStart;
@@ -24,7 +24,7 @@ public class LobbyMenu : MonoBehaviour
     private void OnEnable()
     {
         createRoomButton.onClick.AddListener(OnClickedCreateRoomUIButton);
-        joinRoomButton.onClick.AddListener(OnClickedJoinRoomUIButton);
+        ParticipateRoomButton.onClick.AddListener(OnClickedJoinRoomUIButton);
 
         backToGameStart.onClick.AddListener(BackToGameStartUI);
 
@@ -37,7 +37,7 @@ public class LobbyMenu : MonoBehaviour
     private void OnDisable()
     {
         createRoomButton.onClick.RemoveListener(OnClickedCreateRoomUIButton);
-        joinRoomButton.onClick.RemoveListener(OnClickedJoinRoomUIButton);
+        ParticipateRoomButton.onClick.RemoveListener(OnClickedJoinRoomUIButton);
 
         backToGameStart.onClick.RemoveListener(BackToGameStartUI);
 
@@ -50,7 +50,7 @@ public class LobbyMenu : MonoBehaviour
     private void OnClickedCreateRoomUIButton()
     {
         createRoomButton.gameObject.SetActive(false);
-        joinRoomButton.gameObject.SetActive(false);
+        ParticipateRoomButton.gameObject.SetActive(false);
         Button_JoinRoom.gameObject.SetActive(false);
         JoinMenuUI.SetActive(true);
         backToGameStart.gameObject.SetActive(true);
@@ -65,14 +65,14 @@ public class LobbyMenu : MonoBehaviour
         if (lobbyRoomUI.activeSelf)
             lobbyRoomUI.SetActive(false);
         createRoomButton.gameObject.SetActive(true);
-        joinRoomButton.gameObject.SetActive(true);
+        ParticipateRoomButton.gameObject.SetActive(true);
         backToGameStart.gameObject.SetActive(false);
     }
 
     private async void OnClickedJoinRoomUIButton()
     {
         createRoomButton.gameObject.SetActive(false);
-        joinRoomButton.gameObject.SetActive(false);
+        ParticipateRoomButton.gameObject.SetActive(false);
         lobbyRoomUI.SetActive(true);
         backToGameStart.gameObject.SetActive(true);
         startSceneButton.gameObject.SetActive(false);
@@ -86,7 +86,7 @@ public class LobbyMenu : MonoBehaviour
         JoinMenuUI.SetActive(false);
         lobbyRoomUI.SetActive(false);
         createRoomButton.gameObject.SetActive(true);
-        joinRoomButton.gameObject.SetActive(true);
+        ParticipateRoomButton.gameObject.SetActive(true);
     }
 
 

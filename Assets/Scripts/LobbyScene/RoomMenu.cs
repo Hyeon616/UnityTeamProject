@@ -1,5 +1,7 @@
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -20,26 +22,40 @@ public class RoomMenu : MonoBehaviour
     [SerializeField] private Button lobbyRoomCodeSubmit;
     [SerializeField] private TMP_InputField lobbyRoomCodeInputField;
     [SerializeField] private Button BackRoomButton;
+    [SerializeField] private Button ParticipateLobbyButton;
+
 
     private string selectedRoomName;
     private Dictionary<string, GameObject> roomListItems = new Dictionary<string, GameObject>();
     private bool isInRoom = false;
+    private bool isRoomHost = false;
 
     private void OnEnable()
     {
         leaveRoomButton.onClick.AddListener(OnClickedLeaveRoomButton);
         joinRoomButton.onClick.AddListener(OnClickedJoinRoomButton);
         lobbyRoomCodeSubmit.onClick.AddListener(RoomCodeSubmit);
+        ParticipateLobbyButton.onClick.AddListener(OnClickedParticipateRoomButton);
+        startSceneButton.onClick.AddListener(OnClickedStartScene);
 
+        joinRoomButton.gameObject.SetActive(false);
+        startSceneButton.gameObject.SetActive(false);
     }
+
 
     private void OnDisable()
     {
         leaveRoomButton.onClick.RemoveListener(OnClickedLeaveRoomButton);
         joinRoomButton.onClick.RemoveListener(OnClickedJoinRoomButton);
         lobbyRoomCodeSubmit.onClick.RemoveListener(RoomCodeSubmit);
+        ParticipateLobbyButton.onClick.RemoveListener(OnClickedParticipateRoomButton);
+        startSceneButton.onClick.RemoveListener(OnClickedStartScene);
     }
 
+    private void OnClickedStartScene()
+    {
+        Debug.Log("게임 시작!");
+    }
 
     // 방 생성
     private async void RoomCodeSubmit()
@@ -72,40 +88,62 @@ public class RoomMenu : MonoBehaviour
             lobbyRoomUI.SetActive(true);
             BackRoomButton.gameObject.SetActive(false);
             isInRoom = true;
+            isRoomHost = true;
+            selectedRoomName = roomName;
+
+            UpdateRoomButton();
             await GetRoomList();
+
         }
         else
         {
             Debug.Log($"{responseData["message"]}");
         }
-
-
     }
 
     // 방에서 나가기
-
     private async void OnClickedLeaveRoomButton()
     {
-        var leaveRoomRequest = new
+        try
         {
-            action = "leave_room",
-            playerId = UserData.Instance.UserId
-        };
-        string jsonRequest = JsonConvert.SerializeObject(leaveRoomRequest);
-        string response = await ServerConnector.Instance.SendMessage(jsonRequest);
-        var responseData = JsonConvert.DeserializeObject<Dictionary<string, object>>(response);
-        if (responseData["status"].ToString() == "success")
-        {
-            JoinMenuUI.SetActive(true);
-            lobbyRoomUI.SetActive(false);
-            BackRoomButton.gameObject.SetActive(true);
-            isInRoom = false;
-            // 방 목록 업데이트
-            await GetRoomList();
+            var leaveRoomRequest = new
+            {
+                action = "leave_room",
+                playerId = UserData.Instance.UserId
+            };
+            string jsonRequest = JsonConvert.SerializeObject(leaveRoomRequest);
+            string response = await ServerConnector.Instance.SendMessage(jsonRequest);
+
+            // 응답이 null이거나 비어있는지 확인
+            if (string.IsNullOrEmpty(response))
+            {
+                return;
+            }
+
+            try
+            {
+                var responseData = JsonConvert.DeserializeObject<Dictionary<string, object>>(response);
+                if (responseData != null && responseData["status"].ToString() == "success")
+                {
+                    BackRoomButton.gameObject.SetActive(true);
+                    isInRoom = false;
+                    isRoomHost = false;
+                    UpdateRoomButton();
+                    await GetRoomList();
+                }
+                else
+                {
+                    string errorMessage = responseData != null && responseData.ContainsKey("message") ? responseData["message"].ToString() : "서버 응답 실패";
+                }
+            }
+            catch (JsonReaderException ex)
+            {
+                Debug.Log($"서버 응답 실패 : {ex.Message}\nResponse: {response}");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Debug.LogError($"Failed to leave room: {responseData["message"]}");
+            Debug.Log($"서버 응답 실패(방에서 나가기) : {ex.Message}");
         }
     }
 
@@ -152,8 +190,10 @@ public class RoomMenu : MonoBehaviour
             JoinMenuUI.SetActive(false);
             lobbyRoomUI.SetActive(true);
             BackRoomButton.gameObject.SetActive(false);
-            joinRoomButton.gameObject.SetActive(false);
             isInRoom = true;
+            isRoomHost = false;
+
+            UpdateRoomButton();
             await GetRoomList();
         }
         else
@@ -176,19 +216,39 @@ public class RoomMenu : MonoBehaviour
 
     public async Task GetRoomList()
     {
-        var getRoomListRequest = new { action = "get_room_list" };
-        string jsonRequest = JsonConvert.SerializeObject(getRoomListRequest);
-        string response = await ServerConnector.Instance.SendMessage(jsonRequest);
-        var responseData = JsonConvert.DeserializeObject<Dictionary<string, object>>(response);
+        try
+        {
+            var getRoomListRequest = new { action = "get_room_list" };
+            string jsonRequest = JsonConvert.SerializeObject(getRoomListRequest);
+            string response = await ServerConnector.Instance.SendMessage(jsonRequest);
 
-        if (responseData["status"].ToString() == "success")
-        {
-            var rooms = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(responseData["rooms"].ToString());
-            UpdateRoomList(rooms);
+            if (string.IsNullOrEmpty(response))
+            {
+                return;
+            }
+
+            try
+            {
+                var responseData = JsonConvert.DeserializeObject<Dictionary<string, object>>(response);
+                if (responseData != null && responseData["status"].ToString() == "success")
+                {
+                    var rooms = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(responseData["rooms"].ToString());
+                    UpdateRoomList(rooms);
+                }
+                else
+                {
+                    string errorMessage = responseData != null && responseData.ContainsKey("message") ? responseData["message"].ToString() : "서버 응답 실패";
+                    Debug.Log($"서버 응답 실패 (방 목록) : {errorMessage}");
+                }
+            }
+            catch (JsonReaderException ex)
+            {
+                Debug.Log($"서버 응답 실패 (방 목록) : {ex.Message}\n응답: {response}");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Debug.LogError($"Failed to get room list: {responseData["message"]}");
+            Debug.Log($"서버 응답 실패 (방 목록) : {ex.Message}");
         }
     }
     private void UpdateRoomList(List<Dictionary<string, object>> rooms)
@@ -198,6 +258,18 @@ public class RoomMenu : MonoBehaviour
             Destroy(child.gameObject);
         }
         roomListItems.Clear();
+
+        // 현재 선택된 방의 플레이어 목록도 업데이트
+        Dictionary<string, object> selectedRoom = null;
+        if (!string.IsNullOrEmpty(selectedRoomName))
+        {
+            selectedRoom = rooms.FirstOrDefault(r => r["Name"].ToString() == selectedRoomName);
+            if (selectedRoom != null)
+            {
+                List<string> players = JsonConvert.DeserializeObject<List<string>>(selectedRoom["Players"].ToString());
+                ShowRoomPlayers(selectedRoomName, players);
+            }
+        }
 
         foreach (var room in rooms)
         {
@@ -212,10 +284,42 @@ public class RoomMenu : MonoBehaviour
             roomListUI.Initialize(roomName, mapName, players.Count, maxPlayers);
             roomListItems[roomName] = roomListItem;
 
-            // 방 버튼에 클릭 이벤트 추가
             roomListUI.Button_LobbyRoomListPrefab.onClick.AddListener(() => ShowRoomPlayers(roomName, players));
         }
 
-        joinRoomButton.gameObject.SetActive(false);
+        // 선택한 방이 삭제된 경우
+        if (selectedRoom == null && !string.IsNullOrEmpty(selectedRoomName))
+        {
+            selectedRoomName = null;
+            foreach (Transform child in LobbyRoomPlayerListContent)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+
+        UpdateRoomButton();
     }
+
+    private void UpdateRoomButton()
+    {
+        // 방에 참가하지 않은 상태
+        if (!isInRoom)
+        {
+            joinRoomButton.gameObject.SetActive(true);
+            startSceneButton.gameObject.SetActive(false);
+            return;
+        }
+
+        // 방에 참가한 상태
+        joinRoomButton.gameObject.SetActive(false);
+
+        // 방장인 경우에만 startSceneButton 표시
+        startSceneButton.gameObject.SetActive(isRoomHost);
+    }
+
+    private async void OnClickedParticipateRoomButton()
+    {
+        await GetRoomList();
+    }
+
 }
