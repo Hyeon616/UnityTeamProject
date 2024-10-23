@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class RoomMenu : MonoBehaviour
@@ -52,11 +53,7 @@ public class RoomMenu : MonoBehaviour
         startSceneButton.onClick.RemoveListener(OnClickedStartScene);
     }
 
-    private void OnClickedStartScene()
-    {
-        Debug.Log("게임 시작!");
-    }
-
+    
     // 방 생성
     private async void RoomCodeSubmit()
     {
@@ -162,7 +159,7 @@ public class RoomMenu : MonoBehaviour
             playerItem.GetComponentInChildren<TextMeshProUGUI>().text = player;
         }
 
-        joinRoomButton.gameObject.SetActive(true);
+        UpdateRoomButton();
     }
 
     public async void JoinRoom(string roomName)
@@ -320,6 +317,48 @@ public class RoomMenu : MonoBehaviour
     private async void OnClickedParticipateRoomButton()
     {
         await GetRoomList();
+    }
+
+    private async void OnClickedStartScene()
+    {
+        if (!isRoomHost)
+        {
+            Debug.Log("방장만 게임을 시작할 수 있습니다.");
+            return;
+        }
+
+        var startGameRequest = new
+        {
+            action = "start_game",
+            roomName = selectedRoomName,
+            hostId = UserData.Instance.UserId,
+            sceneName = MapMenu.SelectedMap.SceneName
+        };
+
+        string jsonRequest = JsonConvert.SerializeObject(startGameRequest);
+        string response = await ServerConnector.Instance.SendMessage(jsonRequest);
+
+        var responseData = JsonConvert.DeserializeObject<Dictionary<string, object>>(response);
+
+        if (responseData["status"].ToString() == "success")
+        {
+            string sceneName = responseData["sceneName"].ToString();
+            await LoadGameScene(sceneName);
+        }
+        else
+        {
+            Debug.LogError($"게임 시작 실패: {responseData["message"]}");
+        }
+    }
+
+    private async Task LoadGameScene(string sceneName)
+    {
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+
+        while (!asyncLoad.isDone)
+        {
+            await Task.Yield();
+        }
     }
 
 }

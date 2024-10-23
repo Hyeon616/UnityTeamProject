@@ -16,9 +16,10 @@ public class LobbyMenu : MonoBehaviour
     [SerializeField] private Button backToGameStart;
     [SerializeField] private GameObject JoinMenuUI;
     [SerializeField] private GameObject lobbyRoomUI;
+    [SerializeField] private Button BackRoomButton;
+
     [SerializeField] private Button startSceneButton;
     [SerializeField] private Button Button_JoinRoom;
-    [SerializeField] private Button BackRoomButton;
 
 
     private void OnEnable()
@@ -28,8 +29,6 @@ public class LobbyMenu : MonoBehaviour
 
         backToGameStart.onClick.AddListener(BackToGameStartUI);
 
-        startSceneButton.onClick.AddListener(OnStartGame);
-        Button_JoinRoom.onClick.AddListener(JoinRoomButtonClicked);
         BackRoomButton.onClick.AddListener(OnClickBackRoomButton);
     }
 
@@ -41,8 +40,6 @@ public class LobbyMenu : MonoBehaviour
 
         backToGameStart.onClick.RemoveListener(BackToGameStartUI);
 
-        startSceneButton.onClick.RemoveListener(OnStartGame);
-        Button_JoinRoom.onClick.RemoveListener(JoinRoomButtonClicked);
         BackRoomButton.onClick.RemoveListener(OnClickBackRoomButton);
     }
 
@@ -87,20 +84,6 @@ public class LobbyMenu : MonoBehaviour
         lobbyRoomUI.SetActive(false);
         createRoomButton.gameObject.SetActive(true);
         ParticipateRoomButton.gameObject.SetActive(true);
-    }
-
-
-    private void OnStartGame()
-    {
-        // TODO
-        Debug.Log("게임시작");
-
-    }
-
-    private async void JoinRoomButtonClicked()
-    {
-        //TODO
-        Debug.Log("방참가");
     }
 
 

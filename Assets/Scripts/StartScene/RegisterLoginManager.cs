@@ -95,7 +95,20 @@ public class RegisterLoginManager : MonoBehaviour
     IEnumerator SendMessage(string message)
     {
         var task = ServerConnector.Instance.SendMessage(message);
-        yield return new WaitUntil(() => task.IsCompleted);
+
+        float timeout = Time.time + 10f; // 10초 타임아웃 설정
+
+        while (!task.IsCompleted && Time.time < timeout)
+        {
+            yield return null;
+        }
+
+        if (!task.IsCompleted)
+        {
+            Debug.Log("서버 응답 타임아웃");
+            ShowFeedback("서버 응답 시간 초과");
+            yield break;
+        }
 
         if (task.Exception != null)
         {
@@ -135,7 +148,6 @@ public class RegisterLoginManager : MonoBehaviour
 
                     UserData.Instance.LoadPlayerData(userId.ToString(), characterData);
                 }
-
 
 
                 yield return new WaitForSeconds(1);

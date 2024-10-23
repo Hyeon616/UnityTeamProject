@@ -29,6 +29,7 @@ public class ServerConnector : Singleton<ServerConnector>
         try
         {
             _tcpClient = new TcpClient();
+            _tcpClient.ReceiveBufferSize = 8192;
             await _tcpClient.ConnectAsync(SERVER_IP, SERVER_PORT);
             _stream = _tcpClient.GetStream();
             Debug.Log("서버에 연결되었습니다.");
@@ -52,7 +53,7 @@ public class ServerConnector : Singleton<ServerConnector>
             byte[] data = Encoding.UTF8.GetBytes(message);
             await _stream.WriteAsync(data, 0, data.Length);
 
-            byte[] response = new byte[1024];
+            byte[] response = new byte[8192];
             int readData = await _stream.ReadAsync(response, 0, response.Length);
             string encodingResponse = Encoding.UTF8.GetString(response, 0 ,readData);
 
