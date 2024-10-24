@@ -11,18 +11,74 @@ public class NetworkPlayerAnimator : playerAnimator
     private float syncInterval = 0.1f; // 동기화 간격
     private float lastSyncTime;
 
+    public bool IsLocalPlayer()
+    {
+        return isLocalPlayer;
+    }
+
     public void Initialize(string id, bool isLocal)
     {
         playerId = id;
         isLocalPlayer = isLocal;
 
+        // 필요한 컴포넌트들 찾아서 할당
+        if (_animator == null)
+            _animator = GetComponent<Animator>();
+        if (_characterController == null)
+            _characterController = GetComponent<CharacterController>();
+
+        GameObject canvasSkill = GameObject.Find("Canvas_Skill");
+        if (canvasSkill != null)
+        {
+            Transform skillsTransform = canvasSkill.transform.Find("Skills");
+            if (skillsTransform != null)
+            {
+                skillControlObject = skillsTransform.gameObject;
+                skill = skillControlObject.GetComponent<SkillControl>();
+            }
+            else
+            {
+                Debug.LogError("Skills object not found in Canvas_Skill");
+            }
+        }
+        else
+        {
+            Debug.LogError("Canvas_Skill not found in scene");
+        }
+
         // 로컬 플레이어가 아닌 경우 입력 비활성화
         if (!isLocal)
         {
-            enabled = false;
-            this.enabled = true; 
+            // InputSystem 비활성화를 위해 PlayerInput 컴포넌트 찾아서 비활성화
+            var playerInput = GetComponent<PlayerInput>();
+            if (playerInput != null)
+                playerInput.enabled = false;
+
+            if (skill != null)
+            {
+                foreach (var button in skill.hideSkillButtons)
+                {
+                    button.SetActive(false);
+                }
+                foreach (var text in skill.textPros)
+                {
+                    text.SetActive(false);
+                }
+            }
         }
     }
+
+    private void Start()
+    {
+        base.Start();
+        if (isLocalPlayer)
+        {
+            // UserData에서 스탯 초기화
+            _hp = UserData.Instance.Character.MaxHealth;
+            _str = UserData.Instance.Character.AttackPower;
+        }
+    }
+
 
     protected new void Update()
     {
@@ -44,15 +100,20 @@ public class NetworkPlayerAnimator : playerAnimator
 
     private async void SendPlayerState()
     {
+        var position = new { x = transform.position.x, y = transform.position.y, z = transform.position.z };
+        var rotation = new { x = transform.rotation.x, y = transform.rotation.y, z = transform.rotation.z, w = transform.rotation.w };
+
         var stateData = new
         {
             action = "player_state",
             playerId = playerId,
-            position = transform.position,
-            rotation = transform.rotation,
+            position = position,
+            rotation = rotation,
             isRunning = _isRunning,
             isAction = isAction,
-            hp = _hp
+            currentHealth = _hp,
+            maxHealth = UserData.Instance.Character.MaxHealth,
+            attackPower = UserData.Instance.Character.AttackPower
         };
 
         await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(stateData));
@@ -105,8 +166,8 @@ public class NetworkPlayerAnimator : playerAnimator
         await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(actionData));
     }
 
-    // 원격 플레이어 상태 업데이트
-    public void UpdateRemoteState(Vector3 position, Quaternion rotation, bool isRunning, bool inAction, int hp)
+    public void UpdateState(Vector3 position, Quaternion rotation, bool isRunning, bool inAction,
+        int currentHealth, int maxHealth, int attackPower)
     {
         if (isLocalPlayer) return;
 
@@ -114,13 +175,12 @@ public class NetworkPlayerAnimator : playerAnimator
         transform.rotation = Quaternion.Lerp(transform.rotation, rotation, Time.deltaTime * 10f);
         _isRunning = isRunning;
         isAction = inAction;
-        _hp = hp;
-
+        _hp = currentHealth;
+        _str = attackPower;
         _animator.SetBool("isRunning", isRunning);
     }
 
-    // 원격 플레이어 액션 실행
-    public void ExecuteRemoteAction(string actionName)
+    public void ExecuteAction(string actionName)
     {
         if (isLocalPlayer) return;
 

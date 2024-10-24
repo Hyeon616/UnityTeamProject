@@ -6,18 +6,18 @@ public class IdleState : StateMachineBehaviour
 {
     float timer;
 
-    //[Ãß°İ] - Ãß°İ »óÅÂ·Î ÀüÈ¯µÉ ¶§ ÇÃ·¹ÀÌ¾îÀÇ À§Ä¡°¡ ÇÊ¿äÇØ¼­ ÇÃ·¹ÀÌ¾îÀÇ TransformÀ» ¹ŞÀ» º¯¼ö ¼±¾ğ
-    //±Ùµ¥ ³ªÁß¿¡ ¼­¹ö ºÙÀÌ°í ÇÏ¸é ÇÃ·¹ÀÌ¾î º¹Á¦ÇÏ¸é ÅÂ±× ¾È°ãÄ¡°Ô ÇØ¾ß ÇÒ¼öµµ ÀÖÀ½.
+    //[ì¶”ê²©] - ì¶”ê²© ìƒíƒœë¡œ ì „í™˜ë  ë•Œ í”Œë ˆì´ì–´ì˜ ìœ„ì¹˜ê°€ í•„ìš”í•´ì„œ í”Œë ˆì´ì–´ì˜ Transformì„ ë°›ì„ ë³€ìˆ˜ ì„ ì–¸
+    //ê·¼ë° ë‚˜ì¤‘ì— ì„œë²„ ë¶™ì´ê³  í•˜ë©´ í”Œë ˆì´ì–´ ë³µì œí•˜ë©´ íƒœê·¸ ì•ˆê²¹ì¹˜ê²Œ í•´ì•¼ í• ìˆ˜ë„ ìˆìŒ.
     Transform player;
     float chaseRange = 8;
 
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         timer = 0;
-        
-        //[Ãß°İ] - ÇÃ·¹ÀÌ¾î transform °ª ¹Ş¾Æ¿È        
-        player = GameObject.FindGameObjectWithTag("Player").transform;
 
+        //[ì¶”ê²©] - í”Œë ˆì´ì–´ transform ê°’ ë°›ì•„ì˜´        
+        // player = GameObject.FindGameObjectWithTag("Player").transform;
+        player = null;
     }
 
     // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
@@ -26,10 +26,25 @@ public class IdleState : StateMachineBehaviour
         timer += Time.deltaTime;
         if (timer > 5) animator.SetBool("isPatrolling",true);
 
-        //[Ãß°İ] -  ¸ó½ºÅÍ¿Í ÇÃ·¹ÀÌ¾îÀÇ °Å¸®¸¦ vector3.Distance·Î °è»êÇÏ°í chaseRange¹Ì¸¸ÀÌ¸é Ãß°İ»óÅÂ·Î º¯°æ
-        float distance = Vector3.Distance(player.position, animator.transform.position);
-        if (distance < chaseRange)
-            animator.SetBool("isChasing", true);
+        // í”Œë ˆì´ì–´ê°€ ì•„ì§ nullì¸ ê²½ìš° ë‹¤ì‹œ ì‹œë„í•´ì„œ ì°¾ê¸°
+        if (player == null)
+        {
+            GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+            if (playerObject != null)
+            {
+                player = playerObject.transform;
+            }
+        }
+
+        // í”Œë ˆì´ì–´ê°€ ìˆëŠ” ê²½ìš°ì—ë§Œ ê±°ë¦¬ ê³„ì‚° ë° ì¶”ê²©
+        if (player != null)
+        {
+            float distance = Vector3.Distance(player.position, animator.transform.position);
+            if (distance < chaseRange)
+            {
+                animator.SetBool("isChasing", true);
+            }
+        }
     }
 
     // OnStateExit is called when a transition ends and the state machine finishes evaluating this state

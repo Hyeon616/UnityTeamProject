@@ -5,36 +5,58 @@ using UnityEngine.UI;
 using TMPro;
 public class SkillControl : MonoBehaviour
 {
-    //ºñÈ°¼ºÈ­ ¿¬Ãâ¿¡ »ç¿ëµÉ ÀÌ¹ÌÁö¸¦ Å¸³ª³»°Å³ª ¼û°ÜÁÖ±â À§ÇØ °ÔÀÓ¿ÀºêÁ§Æ® ¸¸µë
+    //ë¹„í™œì„±í™” ì—°ì¶œì— ì‚¬ìš©ë  ì´ë¯¸ì§€ë¥¼ íƒ€ë‚˜ë‚´ê±°ë‚˜ ìˆ¨ê²¨ì£¼ê¸° ìœ„í•´ ê²Œì„ì˜¤ë¸Œì íŠ¸ ë§Œë“¬
     public GameObject[] hideSkillButtons;
 
-    //TextPro°¡ Ã³À½¿¡´Â ºñÈ°¼ºÈ­ µÇ¾î ÀÖ¾î¼­ ¹Ù·Î ÄÄÆ÷³ÍÆ®¸¦ °¡Á®¿Ã ¼ö ¾ø¾î¼­ °ÔÀÓ¿ÀºêÁ§Æ®¸¦ ¸¸µé°í textprosÀÛ¼º
+    //TextProê°€ ì²˜ìŒì—ëŠ” ë¹„í™œì„±í™” ë˜ì–´ ìˆì–´ì„œ ë°”ë¡œ ì»´í¬ë„ŒíŠ¸ë¥¼ ê°€ì ¸ì˜¬ ìˆ˜ ì—†ì–´ì„œ ê²Œì„ì˜¤ë¸Œì íŠ¸ë¥¼ ë§Œë“¤ê³  textprosì‘ì„±
     public GameObject[] textPros;
     public TextMeshProUGUI[] hideSkillTimeTexts;
     public Image[] hideSkillImages;
-    playerAnimator playerSkill;
+    NetworkPlayerAnimator playerSkill;
 
-    //½ºÅ³ »ç¿ëÁßÀÎÁö 
+    //ìŠ¤í‚¬ ì‚¬ìš©ì¤‘ì¸ì§€ 
     public bool[] isHideSkills = { false, false, false, false };
 
     private float[] skillTimes = { 2, 4, 4, 0 };
     public float[] getSkillTimes = { 0, 0, 0, 0, };
 
+    private bool isInitialized = false;
+
     void Start()
     {
-        playerSkill = GameObject.FindWithTag("Player").GetComponent<playerAnimator>();
+        // UI ì´ˆê¸°í™”
         for (int i = 0; i < textPros.Length; i++)
         {
             hideSkillTimeTexts[i] = textPros[i].GetComponent<TextMeshProUGUI>();
             hideSkillButtons[i].SetActive(false);
         }
+
+        // í”Œë ˆì´ì–´ ì°¾ê¸° ì‹œì‘
+        StartCoroutine(WaitForPlayerSpawn());
     }
 
-    // Update is called once per frame
+    private IEnumerator WaitForPlayerSpawn()
+    {
+        // GameManagerì˜ LocalPlayerê°€ ì„¤ì •ë  ë•Œê¹Œì§€ ëŒ€ê¸°
+        while (GameManager.Instance == null || GameManager.Instance.LocalPlayer == null)
+        {
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        // LocalPlayer ì°¸ì¡°
+        playerSkill = GameManager.Instance.LocalPlayer;
+        isInitialized = true;
+    }
+
     void Update()
     {
-        HideSkillChk();
+        // ì´ˆê¸°í™”ê°€ ì™„ë£Œëœ ê²½ìš°ì—ë§Œ ìŠ¤í‚¬ ì²´í¬ ì‹¤í–‰
+        if (isInitialized)
+        {
+            HideSkillChk();
+        }
     }
+
     public void HideSkillSetting(int skillNum)
     {
         if (!isHideSkills[skillNum])

@@ -5,32 +5,32 @@ using static DataManager;
 public class MonsterInfo : MonoBehaviour
 {
     public string MyObjectName;
-    public string _monsterName; // name º¯¼ö¸¦ _monsterNameÀ¸·Î º¯°æ
-    public int _hp; // hp º¯¼ö¸¦ _hp·Î º¯°æ
-    public int _level; // level º¯¼ö¸¦ _level·Î º¯°æ
-    public int _str; // str º¯¼ö¸¦ _str·Î º¯°æ
+    public string _monsterName; // name ë³€ìˆ˜ë¥¼ _monsterNameìœ¼ë¡œ ë³€ê²½
+    public int _hp; // hp ë³€ìˆ˜ë¥¼ _hpë¡œ ë³€ê²½
+    public int _level; // level ë³€ìˆ˜ë¥¼ _levelë¡œ ë³€ê²½
+    public int _str; // str ë³€ìˆ˜ë¥¼ _strë¡œ ë³€ê²½
 
     public Animator animator;
     public Transform wayPoint;
     public GameObject[] playerTags5;//1
     public GameObject randomObject;//2
     [SerializeField] private PlayerAttackSound playerSound;
-    [SerializeField] private MonsterType monsterType; //¸ó½ºÅÍ À¯Çü ÆÇÁ¤ ÄÄÆ÷³ÍÆ® µû·Î Á¸Àç(¸ó½ºÅÍ¿¡ ºÎÂø)
+    [SerializeField] private MonsterType monsterType; //ëª¬ìŠ¤í„° ìœ í˜• íŒì • ì»´í¬ë„ŒíŠ¸ ë”°ë¡œ ì¡´ì¬(ëª¬ìŠ¤í„°ì— ë¶€ì°©)
 
 
     void Awake()
     {
-        //¸ó½ºÅÍ Á¤º¸¸¦ °ÔÀÓ¿ÀºêÁ§Æ® ÀÌ¸§À¸·Î °¡Á®¿À±â À§ÇÑ º¯¼ö
+        //ëª¬ìŠ¤í„° ì •ë³´ë¥¼ ê²Œì„ì˜¤ë¸Œì íŠ¸ ì´ë¦„ìœ¼ë¡œ ê°€ì ¸ì˜¤ê¸° ìœ„í•œ ë³€ìˆ˜
         MyObjectName = (gameObject.name == "LazerMon1(Clone)" || gameObject.name == "LazerMon1" || gameObject.name == "LazerMon(Clone)") ? "mon6" : gameObject.name;
 
-        // À§¿¡¼­ ¾ğ±ŞÇßµí °ÔÀÓ¿ÀºêÁ§Æ® ÀÌ¸§À¸·Î ¸ó½ºÅÍ Á¤º¸¸¦ °¡Á®¿Â´Ù.
+        // ìœ„ì—ì„œ ì–¸ê¸‰í–ˆë“¯ ê²Œì„ì˜¤ë¸Œì íŠ¸ ì´ë¦„ìœ¼ë¡œ ëª¬ìŠ¤í„° ì •ë³´ë¥¼ ê°€ì ¸ì˜¨ë‹¤.
         MonsterData monsterData = DataManager.Instance.GetMonster($"{MyObjectName}");
         animator = GetComponent<Animator>();
-        //°¡Á®¿Â Á¤º¸¸¦ ÇÔ¼ö¿¡ ³Ñ°Ü¼­ hp,level,str µîµî ¼¼ÆÃ
+        //ê°€ì ¸ì˜¨ ì •ë³´ë¥¼ í•¨ìˆ˜ì— ë„˜ê²¨ì„œ hp,level,str ë“±ë“± ì„¸íŒ…
         SetMonsterData(monsterData);
-        Debug.Log("1...¸ó½ºÅÍ Á¤º¸ ¼¼ÆÃ.." + _monsterName);
+        //Debug.Log("1...ëª¬ìŠ¤í„° ì •ë³´ ì„¸íŒ….." + _monsterName);
     }
-    //¸ó½ºÅÍ Á¤º¸ ¼¼ÆÃ
+    //ëª¬ìŠ¤í„° ì •ë³´ ì„¸íŒ…
     private void SetMonsterData(MonsterData monsterData)
     {
 
@@ -62,7 +62,7 @@ public class MonsterInfo : MonoBehaviour
     }
     public void TakeDamage(int damageAmout)
     {
-        //Debug.Log($"°ø°İ ´çÇÔ!!! Current Hp : {_hp}");
+        //Debug.Log($"ê³µê²© ë‹¹í•¨!!! Current Hp : {_hp}");
         //Debug.Log(gameObject.name);
         _hp -= damageAmout;
         if (_hp <= 0)
@@ -70,7 +70,7 @@ public class MonsterInfo : MonoBehaviour
             animator.SetTrigger("die");
             if (playerSound != null)
             {
-                playerSound.MonsterDie();//¸ó½ºÅÍ »ç¸Á »ç¿îµå Ãâ·Â}
+                playerSound.MonsterDie();//ëª¬ìŠ¤í„° ì‚¬ë§ ì‚¬ìš´ë“œ ì¶œë ¥}
                 transform.GetComponent<CapsuleCollider>().enabled = false;
             }
         }
@@ -82,15 +82,15 @@ public class MonsterInfo : MonoBehaviour
                 animator.SetTrigger("damage");
                 if (monsterType.monsterType == 1)
                 {
-                    playerSound.BiologyAttack();// »ı¹°Çü ¸ó½ºÅÍ Å¸°İÀ½
+                    playerSound.BiologyAttack();// ìƒë¬¼í˜• ëª¬ìŠ¤í„° íƒ€ê²©ìŒ
                 }
                 else if (monsterType.monsterType == 2)
                 {
-                    playerSound.NonBiologyAttack(); // ºñ»ı¹°Çü ¸ó½ºÅÍ Å¸°İÀ½
+                    playerSound.NonBiologyAttack(); // ë¹„ìƒë¬¼í˜• ëª¬ìŠ¤í„° íƒ€ê²©ìŒ
                 }
                 else
                 {
-                    Debug.Log("Å¸ÀÔ¾øÀ½");
+                    Debug.Log("íƒ€ì…ì—†ìŒ");
                 }
             }
             else

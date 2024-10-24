@@ -10,7 +10,7 @@ public class playerAnimator : MonoBehaviour
     public ShieldCollision shieldCollision;
     public SkillControl skill;
     public Animator _animator;
-    private CharacterController _characterController;
+    public CharacterController _characterController;
     private Vector3 _moveDirection;              
     public bool _isRunning = false;             
     private int _skillA = -1;                    
@@ -20,9 +20,9 @@ public class playerAnimator : MonoBehaviour
     private float _velocity;                     
     private static string MyObjectName;          
     private static string _PlayerName;           
-    public int _hp = 9000;                      
+    public int _hp ;                      
     private static int _level;                   
-    public int _str=200;                   
+    public int _str;                   
     private static bool isSkillACooldown = false;
     private static bool isSkillBCooldown = false;
     public float dashCooldownDuration = 5f;      
@@ -52,7 +52,7 @@ public class playerAnimator : MonoBehaviour
 
     }
 
-    void Start()
+    public void Start()
     {
         random = new System.Random();
         if (transform.Find("EffectParents").gameObject != null)
