@@ -25,42 +25,42 @@ public class isAttackStop : StateMachineBehaviour
         playerAnimator = animator.GetComponent<playerAnimator>();
         playerAnimator.isAction = true;
 
-        // ¹«±âÀÇ Äİ¶óÀÌ´õ ½ºÅ©¸³Æ®¸¦ Ã£½À´Ï´Ù.
+        // ë¬´ê¸°ì˜ ì½œë¼ì´ë” ìŠ¤í¬ë¦½íŠ¸ë¥¼ ì°¾ìŠµë‹ˆë‹¤.
         weaponColliderScript = animator.GetComponentInChildren<ColliderScript>();
 
-        // Ãæµ¹ ÀÌº¥Æ®¸¦ Ã³¸®ÇÏ´Â ¸Ş¼­µå¸¦ ¼³Á¤ÇÕ´Ï´Ù.
+        // ì¶©ëŒ ì´ë²¤íŠ¸ë¥¼ ì²˜ë¦¬í•˜ëŠ” ë©”ì„œë“œë¥¼ ì„¤ì •í•©ë‹ˆë‹¤.
         weaponColliderScript.OnTriggerEnterEvent += OnTriggerEnterEventHandler;
     }
 
     override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        Debug.Log("test5");
+        //Debug.Log("test5");
         playerAnimator = animator.GetComponent<playerAnimator>();
         if (stateInfo.IsTag("a"))
         {
-            Debug.Log("test4");
+            //Debug.Log("test4");
             if (animator.GetCurrentAnimatorStateInfo(0).IsName("p_Idle") || animator.GetCurrentAnimatorStateInfo(0).IsName("p_run") || animator.GetCurrentAnimatorStateInfo(0).IsName("ChargeSkillA_Skill"))
             {
-                Debug.Log("test3");
+                //Debug.Log("test3");
                 playerAnimator.isAction = false;
             }
             else
             {
-                Debug.Log("test2");
+                //Debug.Log("test2");
             }
         }
 
-        // Ãæµ¹ ÀÌº¥Æ®¸¦ Ã³¸®ÇÏ´Â ¸Ş¼­µå¸¦ Á¦°ÅÇÕ´Ï´Ù.
+        // ì¶©ëŒ ì´ë²¤íŠ¸ë¥¼ ì²˜ë¦¬í•˜ëŠ” ë©”ì„œë“œë¥¼ ì œê±°í•©ë‹ˆë‹¤.
         weaponColliderScript.OnTriggerEnterEvent -= OnTriggerEnterEventHandler;
 
-        // Ãæµ¹ ÇÃ·¡±×¸¦ ÃÊ±âÈ­ÇÕ´Ï´Ù.
+        // ì¶©ëŒ í”Œë˜ê·¸ë¥¼ ì´ˆê¸°í™”í•©ë‹ˆë‹¤.
         hasCollided = false;
-        Debug.Log("test1");
+       // Debug.Log("test1");
     }
 
     private void OnTriggerEnterEventHandler(Collider otherCollider)
     {
-        // Ãæµ¹ÀÌ Ã³À½ °¨ÁöµÉ ¶§¸¸ Ã³¸®ÇÕ´Ï´Ù.
+        // ì¶©ëŒì´ ì²˜ìŒ ê°ì§€ë  ë•Œë§Œ ì²˜ë¦¬í•©ë‹ˆë‹¤.
         if (!hasCollided)
         {
             if (otherCollider.gameObject.name == "Shield")
@@ -99,10 +99,10 @@ public class isAttackStop : StateMachineBehaviour
 
             if (otherCollider.CompareTag("Lazer_point"))
             {
-                Debug.Log("Æ÷Å¾" + otherCollider.transform.position.x);
-                Debug.Log("ÇÃ·¹ÀÌ¾î" + playerAnimator.transform.position.x);
+                Debug.Log("í¬íƒ‘" + otherCollider.transform.position.x);
+                Debug.Log("í”Œë ˆì´ì–´" + playerAnimator.transform.position.x);
 
-                // Æ÷Å¾À» ÇÃ·¹ÀÌ¾î ÂÊÀ¸·Î È¸Àü½ÃÅµ´Ï´Ù.
+                // í¬íƒ‘ì„ í”Œë ˆì´ì–´ ìª½ìœ¼ë¡œ íšŒì „ì‹œí‚µë‹ˆë‹¤.
                 RotateTurretTowardsPlayer(otherCollider.transform);
             }
 
@@ -130,22 +130,22 @@ public class isAttackStop : StateMachineBehaviour
 
         if (playerAnimator.transform.position.x < turretTransform.position.x)
         {
-            // ÇÃ·¹ÀÌ¾î°¡ ¿ŞÂÊ¿¡ ÀÖ´Â °æ¿ì ¹İ½Ã°è ¹æÇâÀ¸·Î È¸Àü
+            // í”Œë ˆì´ì–´ê°€ ì™¼ìª½ì— ìˆëŠ” ê²½ìš° ë°˜ì‹œê³„ ë°©í–¥ìœ¼ë¡œ íšŒì „
             targetYRotation = currentYRotation - rotationStep;
         }
         else
         {
-            // ÇÃ·¹ÀÌ¾î°¡ ¿À¸¥ÂÊ¿¡ ÀÖ´Â °æ¿ì ½Ã°è ¹æÇâÀ¸·Î È¸Àü
+            // í”Œë ˆì´ì–´ê°€ ì˜¤ë¥¸ìª½ì— ìˆëŠ” ê²½ìš° ì‹œê³„ ë°©í–¥ìœ¼ë¡œ íšŒì „
             targetYRotation = currentYRotation + rotationStep;
         }
 
-        // 0-360µµ »çÀÌ·Î È¸ÀüÀ» º¸ÀåÇÕ´Ï´Ù.
+        // 0-360ë„ ì‚¬ì´ë¡œ íšŒì „ì„ ë³´ì¥í•©ë‹ˆë‹¤.
         if (targetYRotation < 0)
             targetYRotation += 360;
         else if (targetYRotation > 360)
             targetYRotation -= 360;
 
-        // »õ·Î¿î È¸ÀüÀ» Àû¿ëÇÕ´Ï´Ù.
+        // ìƒˆë¡œìš´ íšŒì „ì„ ì ìš©í•©ë‹ˆë‹¤.
         turretTransform.rotation = Quaternion.Euler(0, targetYRotation, 0);
     }
 }

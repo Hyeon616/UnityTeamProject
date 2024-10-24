@@ -11,10 +11,12 @@ public class NetworkPlayerAnimator : playerAnimator
     private float syncInterval = 0.1f; // 동기화 간격
     private float lastSyncTime;
 
-    public bool IsLocalPlayer()
-    {
-        return isLocalPlayer;
-    }
+    private Vector3 lastSentPosition;
+    private Quaternion lastSentRotation;
+    private bool lastSentIsRunning;
+    private bool lastSentIsAction;
+    private int lastSentHealth;
+
 
     public void Initialize(string id, bool isLocal)
     {
@@ -66,6 +68,14 @@ public class NetworkPlayerAnimator : playerAnimator
                 }
             }
         }
+
+        lastSentPosition = transform.position;
+        lastSentRotation = transform.rotation;
+        lastSentIsRunning = _isRunning;
+        lastSentIsAction = isAction;
+        lastSentHealth = _hp;
+
+
     }
 
     private void Start()
@@ -100,23 +110,41 @@ public class NetworkPlayerAnimator : playerAnimator
 
     private async void SendPlayerState()
     {
-        var position = new { x = transform.position.x, y = transform.position.y, z = transform.position.z };
-        var rotation = new { x = transform.rotation.x, y = transform.rotation.y, z = transform.rotation.z, w = transform.rotation.w };
+        // 상태가 변경되었는지 확인
+        bool hasChanged = Vector3.Distance(lastSentPosition, transform.position) > 0.01f ||
+                         Quaternion.Angle(lastSentRotation, transform.rotation) > 1f ||
+                         lastSentIsRunning != _isRunning ||
+                         lastSentIsAction != isAction ||
+                         lastSentHealth != _hp;
 
-        var stateData = new
+        // 변경된 경우에만 전송
+        if (hasChanged)
         {
-            action = "player_state",
-            playerId = playerId,
-            position = position,
-            rotation = rotation,
-            isRunning = _isRunning,
-            isAction = isAction,
-            currentHealth = _hp,
-            maxHealth = UserData.Instance.Character.MaxHealth,
-            attackPower = UserData.Instance.Character.AttackPower
-        };
+            var position = new { x = transform.position.x, y = transform.position.y, z = transform.position.z };
+            var rotation = new { x = transform.rotation.x, y = transform.rotation.y, z = transform.rotation.z, w = transform.rotation.w };
 
-        await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(stateData));
+            var stateData = new
+            {
+                action = "player_state",
+                playerId = playerId,
+                position = position,
+                rotation = rotation,
+                isRunning = _isRunning,
+                isAction = isAction,
+                currentHealth = _hp,
+                maxHealth = UserData.Instance.Character.MaxHealth,
+                attackPower = UserData.Instance.Character.AttackPower
+            };
+
+            await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(stateData));
+
+            // 전송된 상태 저장
+            lastSentPosition = transform.position;
+            lastSentRotation = transform.rotation;
+            lastSentIsRunning = _isRunning;
+            lastSentIsAction = isAction;
+            lastSentHealth = _hp;
+        }
     }
 
     // 입력 처리 메서드 오버라이드
@@ -126,12 +154,7 @@ public class NetworkPlayerAnimator : playerAnimator
         base.OnMove(value);
     }
 
-    public override void OnDash(InputValue value = null)
-    {
-        if (!isLocalPlayer) return;
-        base.OnDash(value);
-        SendActionEvent("dash");
-    }
+    
 
     public override void OnSkillA(InputValue value = null)
     {
@@ -145,6 +168,13 @@ public class NetworkPlayerAnimator : playerAnimator
         if (!isLocalPlayer) return;
         base.OnSkillB(value);
         SendActionEvent("skillB");
+    }
+
+    public override void OnDash(InputValue value = null)
+    {
+        if (!isLocalPlayer) return;
+        base.OnDash(value);
+        SendActionEvent("dash");
     }
 
     public override void OnClick()
@@ -167,14 +197,13 @@ public class NetworkPlayerAnimator : playerAnimator
     }
 
     public void UpdateState(Vector3 position, Quaternion rotation, bool isRunning, bool inAction,
-        int currentHealth, int maxHealth, int attackPower)
+         int currentHealth, int maxHealth, int attackPower)
     {
         if (isLocalPlayer) return;
 
         transform.position = Vector3.Lerp(transform.position, position, Time.deltaTime * 10f);
         transform.rotation = Quaternion.Lerp(transform.rotation, rotation, Time.deltaTime * 10f);
         _isRunning = isRunning;
-        isAction = inAction;
         _hp = currentHealth;
         _str = attackPower;
         _animator.SetBool("isRunning", isRunning);
@@ -187,22 +216,19 @@ public class NetworkPlayerAnimator : playerAnimator
         switch (actionName)
         {
             case "attack":
-                _animator.SetTrigger("onWeaponAttack");
+                OnClick();
                 break;
             case "skillA":
-                _animator.SetInteger("skillA", 0);
-                _animator.Play("ChargeSkillA_Skill");
-                StartCoroutine(SkillASlashLoop());
+                OnSkillA();
                 break;
             case "skillB":
-                StartCoroutine(ActionTimer("SkillA_unlock 1", 2.2f));
+                OnSkillB();
                 break;
             case "dash":
-                StartCoroutine(MovePlayerToPosition(
-                    transform.position,
-                    transform.position + transform.forward * 5f,
-                    0.2f));
+                OnDash();
                 break;
         }
     }
+
+
 }

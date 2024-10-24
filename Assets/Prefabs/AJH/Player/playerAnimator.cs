@@ -29,7 +29,7 @@ public class playerAnimator : MonoBehaviour
     private bool isDashCooldown = false;         
     private bool canInput = true;
     private bool isKnockedBack = false;
-    private GameObject attack;
+    public GameObject attack;
 
     private bool bossstart;
     public bool BossStart
@@ -41,7 +41,7 @@ public class playerAnimator : MonoBehaviour
     FloatingHealthBar healthBar;
     [SerializeField]
     private Collider WeaponCollider;           
-    [SerializeField] private PlayerAttackSound playerSound;
+    [SerializeField] public PlayerAttackSound playerSound;
     [SerializeField]
     private Canvas _hpCanvas;
 

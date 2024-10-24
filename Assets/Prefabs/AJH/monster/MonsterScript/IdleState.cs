@@ -16,8 +16,9 @@ public class IdleState : StateMachineBehaviour
         timer = 0;
 
         //[추격] - 플레이어 transform 값 받아옴        
-        // player = GameObject.FindGameObjectWithTag("Player").transform;
-        player = null;
+        player = GameObject.FindGameObjectWithTag("Player").transform;
+        
+        
     }
 
     // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
