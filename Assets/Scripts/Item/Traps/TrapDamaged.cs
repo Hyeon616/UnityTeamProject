@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 public class TrapDamaged : MonoBehaviour
 {
     public playerAnimator player;
-    public NetworkPlayerController playerController;
+    //public NetworkPlayerController playerController;
     public int damageIntPoint = 1;
     public float sladeSpeed = 1;
 
@@ -12,17 +12,11 @@ public class TrapDamaged : MonoBehaviour
     {
         if (hit.gameObject.CompareTag("Trap"))
         {
-            if (!playerController && player)
+            if (player != null)
             {
                 player.TakeDamage(damageIntPoint);
-                Debug.Log("Trap Damaged(single)");
             }
-            else if (!player && playerController)
-            {
-                playerController.TakeDamage(damageIntPoint);
-                Debug.Log("Trap Damaged(Network)");
-            }
-            else { Debug.Log("playerControler ºÎÂøµÇÁö ¾ÊÀ½"); }
+            else { Debug.Log("player ë¶€ì°©ë˜ì§€ ì•ŠìŒ"); }
            
         }
         else if(hit.gameObject.name == "SladeRock")

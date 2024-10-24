@@ -22,8 +22,8 @@ public class InfoView : MonoBehaviour
 
     private void OnDisable()
     {
-        
-        UserData.Instance.OnCharacterDataChanged -= UpdateUI;
+        if (UserData.Instance != null)
+            UserData.Instance.OnCharacterDataChanged -= UpdateUI;
     }
 
     private void Start()

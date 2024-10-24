@@ -2,6 +2,8 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -53,7 +55,7 @@ public class RoomMenu : MonoBehaviour
         startSceneButton.onClick.RemoveListener(OnClickedStartScene);
     }
 
-    
+
     // 방 생성
     private async void RoomCodeSubmit()
     {
@@ -91,6 +93,7 @@ public class RoomMenu : MonoBehaviour
             UpdateRoomButton();
             await GetRoomList();
 
+            _ = ListenRoomState();
         }
         else
         {
@@ -101,6 +104,7 @@ public class RoomMenu : MonoBehaviour
     // 방에서 나가기
     private async void OnClickedLeaveRoomButton()
     {
+
         try
         {
             var leaveRoomRequest = new
@@ -111,36 +115,40 @@ public class RoomMenu : MonoBehaviour
             string jsonRequest = JsonConvert.SerializeObject(leaveRoomRequest);
             string response = await ServerConnector.Instance.SendMessage(jsonRequest);
 
-            // 응답이 null이거나 비어있는지 확인
-            if (string.IsNullOrEmpty(response))
-            {
-                return;
-            }
-
-            try
+            if (!string.IsNullOrEmpty(response))
             {
                 var responseData = JsonConvert.DeserializeObject<Dictionary<string, object>>(response);
                 if (responseData != null && responseData["status"].ToString() == "success")
                 {
+                    // UI 상태와 플래그 초기화
                     BackRoomButton.gameObject.SetActive(true);
-                    isInRoom = false;
+                    isInRoom = false; // ListenGameStart가 이 플래그를 보고 멈춤
                     isRoomHost = false;
+                    selectedRoomName = null;
+
+                    // UI 초기화
+                    foreach (Transform child in LobbyRoomPlayerListContent)
+                    {
+                        Destroy(child.gameObject);
+                    }
+                    foreach (Transform child in LobbyRoomListContent)
+                    {
+                        Destroy(child.gameObject);
+                    }
+                    roomListItems.Clear();
+
                     UpdateRoomButton();
                     await GetRoomList();
                 }
                 else
                 {
-                    string errorMessage = responseData != null && responseData.ContainsKey("message") ? responseData["message"].ToString() : "서버 응답 실패";
+                    Debug.LogError($"방 나가기 실패: {responseData?["message"]}");
                 }
-            }
-            catch (JsonReaderException ex)
-            {
-                Debug.Log($"서버 응답 실패 : {ex.Message}\nResponse: {response}");
             }
         }
         catch (Exception ex)
         {
-            Debug.Log($"서버 응답 실패(방에서 나가기) : {ex.Message}");
+            Debug.LogError($"방 나가기 처리 중 오류 발생: {ex.Message}");
         }
     }
 
@@ -192,6 +200,9 @@ public class RoomMenu : MonoBehaviour
 
             UpdateRoomButton();
             await GetRoomList();
+
+
+            _ = ListenRoomState();
         }
         else
         {
@@ -248,6 +259,7 @@ public class RoomMenu : MonoBehaviour
             Debug.Log($"서버 응답 실패 (방 목록) : {ex.Message}");
         }
     }
+
     private void UpdateRoomList(List<Dictionary<string, object>> rooms)
     {
         foreach (Transform child in LobbyRoomListContent)
@@ -350,6 +362,44 @@ public class RoomMenu : MonoBehaviour
             Debug.LogError($"게임 시작 실패: {responseData["message"]}");
         }
     }
+
+    private async Task ListenRoomState()
+    {
+        try
+        {
+            while (isInRoom)
+            {
+                string message = await ServerConnector.Instance.ReadMessage();
+                if (!string.IsNullOrEmpty(message))
+                {
+                    try
+                    {
+                        var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(message);
+                        if (data != null && data["action"]?.ToString() == "start_game" && data["status"]?.ToString() == "success")
+                        {
+                            string sceneName = data["sceneName"].ToString();
+                            await LoadGameScene(sceneName);
+                            break;
+                        }
+                        else if (data["action"]?.ToString() == "get_room_list" && data["status"]?.ToString() == "success")
+                        {
+                            var rooms = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(data["rooms"].ToString());
+                            UpdateRoomList(rooms);
+                        }
+                    }
+                    catch (JsonReaderException)
+                    {
+                        continue;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"게임 시작 메시지 수신 중 오류: {ex.Message}");
+        }
+    }
+
 
     private async Task LoadGameScene(string sceneName)
     {
