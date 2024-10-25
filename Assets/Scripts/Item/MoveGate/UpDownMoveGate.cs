@@ -14,19 +14,20 @@ public class UpDownMoveGate : MonoBehaviour
     public float upDownStopSecond = 0;
     [SerializeField] private BgmManager bgmManager;
     [SerializeField] private Boss boss;
-    [SerializeField] private playerAnimator playerAnimatorScript;  // playerAnimator ½ºÅ©¸³Æ® ÂüÁ¶¸¦ À§ÇÑ º¯¼ö
+    [SerializeField] private NetworkPlayerAnimator playerAnimatorScript;  // playerAnimator ìŠ¤í¬ë¦½íŠ¸ ì°¸ì¡°ë¥¼ ìœ„í•œ ë³€ìˆ˜
 
     [SerializeField] private bool isMoving = false;
     private int point = 0;
 
-    public CinemachineVirtualCamera vCam1; // ±âº» À§Ä¡ Ä«¸Ş¶ó
-    public CinemachineVirtualCamera vCam2; // ÀÌµ¿ÇÒ À§Ä¡ Ä«¸Ş¶ó
+    public CinemachineVirtualCamera vCam1; // ê¸°ë³¸ ìœ„ì¹˜ ì¹´ë©”ë¼
+    public CinemachineVirtualCamera vCam2; // ì´ë™í•  ìœ„ì¹˜ ì¹´ë©”ë¼
 
     private bool isCoroutineRunning = false;
 
     private void Start()
     {
-        playerAnimatorScript = playerAnimatorScript.GetComponent<playerAnimator>();
+
+        playerAnimatorScript = playerAnimatorScript.GetComponent<NetworkPlayerAnimator>();
     }
     private void Update()
     {
@@ -58,7 +59,7 @@ public class UpDownMoveGate : MonoBehaviour
                 boss.bosssRoomStartCheck = true;
                 bossStart = true;
                 Canvas_Boss.active = true;
-                playerAnimatorScript.BossStart = true;  // playerAnimator ½ºÅ©¸³Æ®ÀÇ BossStart ¼Ó¼ºÀ» true·Î ¼³Á¤
+                playerAnimatorScript.BossStart = true;  // playerAnimator ìŠ¤í¬ë¦½íŠ¸ì˜ BossStart ì†ì„±ì„ trueë¡œ ì„¤ì •
             }
             gate.transform.Translate(Vector3.up * speed * Time.deltaTime);
             Invoke("UpActive", upDownStopSecond);
@@ -94,14 +95,14 @@ public class UpDownMoveGate : MonoBehaviour
     private IEnumerator MoveCameraRoutine()
     {
         isCoroutineRunning = true;
-        // Ä«¸Ş¶ó¸¦ ÀÌµ¿ÇÒ À§Ä¡·Î ÀüÈ¯
+        // ì¹´ë©”ë¼ë¥¼ ì´ë™í•  ìœ„ì¹˜ë¡œ ì „í™˜
         vCam1.Priority = 0;
         vCam2.Priority = 10;
 
-        // Ä«¸Ş¶ó°¡ ÀÌµ¿ÇÒ ½Ã°£À» ±â´Ù¸² (¿¹: 2ÃÊ)
+        // ì¹´ë©”ë¼ê°€ ì´ë™í•  ì‹œê°„ì„ ê¸°ë‹¤ë¦¼ (ì˜ˆ: 2ì´ˆ)
         yield return new WaitForSeconds(2f);
 
-        // ´Ù½Ã ¿ø·¡ À§Ä¡·Î ÀüÈ¯
+        // ë‹¤ì‹œ ì›ë˜ ìœ„ì¹˜ë¡œ ì „í™˜
         vCam1.Priority = 10;
         vCam2.Priority = 0;
         isCoroutineRunning = false;

@@ -50,22 +50,19 @@ public class ServerConnector : Singleton<ServerConnector>
             return null;
         }
 
-        lock (_streamLock)
+        try
         {
-            try
-            {
-                byte[] data = Encoding.UTF8.GetBytes(message);
-                _stream.Write(data, 0, data.Length);
-                byte[] response = new byte[8192];
-                int readData = _stream.Read(response, 0, response.Length);
-                string encodingResponse = Encoding.UTF8.GetString(response, 0, readData);
-                return encodingResponse;
-            }
-            catch (Exception ex)
-            {
-                Debug.Log($"서버 전송 실패 : {ex.Message}");
-                return null;
-            }
+            byte[] data = Encoding.UTF8.GetBytes(message);
+            _stream.Write(data, 0, data.Length);
+            byte[] response = new byte[8192];
+            int readData = _stream.Read(response, 0, response.Length);
+            string encodingResponse = Encoding.UTF8.GetString(response, 0, readData);
+            return encodingResponse;
+        }
+        catch (Exception ex)
+        {
+            Debug.Log($"서버 전송 실패 : {ex.Message}");
+            return null;
         }
     }
 

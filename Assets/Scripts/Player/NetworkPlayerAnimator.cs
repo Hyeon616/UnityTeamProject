@@ -87,6 +87,8 @@ public class NetworkPlayerAnimator : playerAnimator
             _hp = UserData.Instance.Character.MaxHealth;
             _str = UserData.Instance.Character.AttackPower;
         }
+
+
     }
 
 
@@ -94,6 +96,7 @@ public class NetworkPlayerAnimator : playerAnimator
     {
         if (!isLocalPlayer)
         {
+
             base.ApplyGravity();
             return;
         }
@@ -110,15 +113,12 @@ public class NetworkPlayerAnimator : playerAnimator
 
     private async void SendPlayerState()
     {
-        // 상태가 변경되었는지 확인
-        bool hasChanged = Vector3.Distance(lastSentPosition, transform.position) > 0.01f ||
-                         Quaternion.Angle(lastSentRotation, transform.rotation) > 1f ||
-                         lastSentIsRunning != _isRunning ||
-                         lastSentIsAction != isAction ||
-                         lastSentHealth != _hp;
+        bool positionChanged = Vector3.Distance(lastSentPosition, transform.position) > 0.01f;
+        bool rotationChanged = Quaternion.Angle(lastSentRotation, transform.rotation) > 1f;
+        bool stateChanged = lastSentIsRunning != _isRunning || lastSentIsAction != isAction;
 
-        // 변경된 경우에만 전송
-        if (hasChanged)
+        // 위치, 회전 또는 상태가 변경되었을 때만 서버에 전송
+        if (positionChanged || rotationChanged || stateChanged)
         {
             var position = new { x = transform.position.x, y = transform.position.y, z = transform.position.z };
             var rotation = new { x = transform.rotation.x, y = transform.rotation.y, z = transform.rotation.z, w = transform.rotation.w };
@@ -138,12 +138,11 @@ public class NetworkPlayerAnimator : playerAnimator
 
             await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(stateData));
 
-            // 전송된 상태 저장
+            // 마지막 전송 상태 업데이트
             lastSentPosition = transform.position;
             lastSentRotation = transform.rotation;
             lastSentIsRunning = _isRunning;
             lastSentIsAction = isAction;
-            lastSentHealth = _hp;
         }
     }
 
@@ -154,11 +153,17 @@ public class NetworkPlayerAnimator : playerAnimator
         base.OnMove(value);
     }
 
-    
+
 
     public override void OnSkillA(InputValue value = null)
     {
         if (!isLocalPlayer) return;
+        if (isAction) return;
+        if (value != null && !skill.isHideSkills[1])
+        {
+            skill.HideSkillSetting(1);
+            return;
+        }
         base.OnSkillA(value);
         SendActionEvent("skillA");
     }
@@ -166,6 +171,12 @@ public class NetworkPlayerAnimator : playerAnimator
     public override void OnSkillB(InputValue value = null)
     {
         if (!isLocalPlayer) return;
+        if (isAction) return;
+        if (value != null && !skill.isHideSkills[2])
+        {
+            skill.HideSkillSetting(2);
+            return;
+        }
         base.OnSkillB(value);
         SendActionEvent("skillB");
     }
@@ -173,6 +184,12 @@ public class NetworkPlayerAnimator : playerAnimator
     public override void OnDash(InputValue value = null)
     {
         if (!isLocalPlayer) return;
+        if (isAction) return;
+        if (value != null && !skill.isHideSkills[0])
+        {
+            skill.HideSkillSetting(0);
+            return;
+        }
         base.OnDash(value);
         SendActionEvent("dash");
     }
@@ -183,6 +200,8 @@ public class NetworkPlayerAnimator : playerAnimator
         base.OnClick();
         SendActionEvent("attack");
     }
+
+
 
     private async void SendActionEvent(string actionName)
     {
@@ -196,13 +215,14 @@ public class NetworkPlayerAnimator : playerAnimator
         await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(actionData));
     }
 
-    public void UpdateState(Vector3 position, Quaternion rotation, bool isRunning, bool inAction,
-         int currentHealth, int maxHealth, int attackPower)
+    public void UpdateState(Vector3 position, Quaternion rotation, bool isRunning, bool inAction, int currentHealth, int maxHealth, int attackPower)
     {
         if (isLocalPlayer) return;
 
-        transform.position = Vector3.Lerp(transform.position, position, Time.deltaTime * 10f);
-        transform.rotation = Quaternion.Lerp(transform.rotation, rotation, Time.deltaTime * 10f);
+        // 위치와 회전을 빠르게 반영하기 위해 보간 비율을 조정
+        transform.position = Vector3.Lerp(transform.position, position, 0.2f);
+        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 0.2f);
+
         _isRunning = isRunning;
         _hp = currentHealth;
         _str = attackPower;
@@ -216,19 +236,118 @@ public class NetworkPlayerAnimator : playerAnimator
         switch (actionName)
         {
             case "attack":
-                OnClick();
+                // 기본 공격
+                StartCoroutine(ExecuteAttack());
                 break;
+
             case "skillA":
-                OnSkillA();
+                // 스킬 A
+                StartCoroutine(ExecuteSkillA());
                 break;
+
             case "skillB":
-                OnSkillB();
+                // 스킬 B
+                StartCoroutine(ExecuteSkillB());
                 break;
+
             case "dash":
-                OnDash();
+                // 대시
+                StartCoroutine(ExecuteDash());
                 break;
         }
     }
 
+    private IEnumerator ExecuteAttack()
+    {
+        _animator.SetTrigger("onWeaponAttack");
+
+        // 공격 이펙트
+        attackEvent("1");
+
+        if (playerSound != null) playerSound.BaseAttack();
+        yield return new WaitForSeconds(0.5f);
+
+
+    }
+
+    private IEnumerator ExecuteSkillA()
+    {
+        isAction = true;
+
+        // 애니메이션
+        _animator.SetInteger("skillA", 0);
+        _animator.Play("ChargeSkillA_Skill");
+
+        // 이펙트
+        if (attack != null)
+        {
+            attack.transform.Find("Slash").gameObject.SetActive(true);
+            yield return new WaitForSeconds(2.9f);
+            attack.transform.Find("Slash").gameObject.SetActive(false);
+        }
+
+        // 사운드
+        if (playerSound != null) playerSound.SkillA();
+
+        yield return null;
+        isAction = false;
+    }
+
+    private IEnumerator ExecuteSkillB()
+    {
+        isAction = true;
+
+        StartCoroutine(ActionTimer("SkillA_unlock 1", 2.2f));
+
+        // 이펙트들
+        SkillBEffectGround();
+        yield return new WaitForSeconds(0.27f);
+        SkillBEffectWeapon();
+        yield return new WaitForSeconds(0.9f);
+        SkillBEffectExplosion();
+
+        // 사운드
+        if (playerSound != null) playerSound.SkillB();
+
+        yield return new WaitForSeconds(1.0f);
+        isAction = false;
+    }
+
+    private IEnumerator ExecuteDash()
+    {
+        isAction = true;
+        Vector3 dashDestination = transform.position + transform.forward * 5f;
+
+        // 대시 이펙트
+        if (attack != null)
+        {
+            attack.transform.Find("Dash").gameObject.SetActive(true);
+        }
+
+        // 이동
+        float elapsedTime = 0f;
+        Vector3 startPosition = transform.position;
+        float duration = 0.2f;
+
+        while (elapsedTime < duration)
+        {
+            transform.position = Vector3.Lerp(startPosition, dashDestination, elapsedTime / duration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.position = dashDestination;
+
+        // 이펙트 종료
+        if (attack != null)
+        {
+            attack.transform.Find("Dash").gameObject.SetActive(false);
+        }
+
+        // 사운드
+        if (playerSound != null) playerSound.Dash();
+
+        isAction = false;
+    }
 
 }

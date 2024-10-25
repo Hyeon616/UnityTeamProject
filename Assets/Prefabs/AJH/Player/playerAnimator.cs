@@ -68,7 +68,7 @@ public class playerAnimator : MonoBehaviour
 
         MyObjectName = gameObject.name;
 
-        LoadPlayerDataFromUserData();
+        //LoadPlayerDataFromUserData();
         var behaviours = _animator.GetBehaviours<isAttackStop>();
         foreach (var behaviour in behaviours)
         {
@@ -97,6 +97,7 @@ public class playerAnimator : MonoBehaviour
         _level = playerData.level;
         _str = playerData.str;
     }
+
     public void attackEvent(string type)
     {
         if (attack != null)
@@ -110,6 +111,11 @@ public class playerAnimator : MonoBehaviour
             {
                 effect.SetActive(true);
             }
+        }
+
+        if (playerSound != null)
+        {
+            playerSound.BaseAttack();
         }
     }
 
@@ -239,7 +245,7 @@ public class playerAnimator : MonoBehaviour
 
     }
 
-    public IEnumerator MovePlayerToPosition(Vector3 startPosition, Vector3 endPosition, float duration)
+    public new IEnumerator MovePlayerToPosition(Vector3 startPosition, Vector3 endPosition, float duration)
     {
         float elapsedTime = 0f;
 
@@ -248,10 +254,13 @@ public class playerAnimator : MonoBehaviour
             transform.position = Vector3.Lerp(startPosition, endPosition, elapsedTime / duration);
             elapsedTime += Time.deltaTime;
             yield return null;
-            attack.transform.Find("Dash").gameObject.SetActive(false);
         }
 
         transform.position = endPosition;
+        if (attack != null)
+        {
+            attack.transform.Find("Dash").gameObject.SetActive(false);
+        }
     }
 
     public virtual void OnSkillA(InputValue value = null)
@@ -263,7 +272,7 @@ public class playerAnimator : MonoBehaviour
         }
         if (playerSound != null) { playerSound.SkillA(); }
 
-        Debug.Log("��ų A ���� ���");
+        
         _animator.SetInteger("skillA", 0);
         _animator.Play("ChargeSkillA_Skill"); 
         StartCoroutine(SkillASlashLoop());
@@ -279,7 +288,6 @@ public class playerAnimator : MonoBehaviour
         if (skill.getSkillTimes[2] > 0) return;
         if (playerSound != null) { playerSound.SkillB(); }
 
-        Debug.Log("��ų B ���� ���");
         StartCoroutine(ActionTimer("SkillA_unlock 1", 2.2f));
 
     }
@@ -287,7 +295,6 @@ public class playerAnimator : MonoBehaviour
     public virtual void OnClick()
     {
         _animator.SetTrigger("onWeaponAttack");
-
 
     }
     public virtual void SkillClick()

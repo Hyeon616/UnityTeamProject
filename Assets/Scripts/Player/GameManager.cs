@@ -54,72 +54,34 @@ public class GameManager : MonoBehaviour
     }
 
     private async void SpawnPlayers()
+{
+    try
     {
-        try
+        Vector3 spawnPosition = GetNextSpawnPosition();
+        
+        // 먼저 로컬 플레이어를 생성
+        SpawnLocalPlayer(spawnPosition);
+
+        var spawnData = new
         {
-            Vector3 spawnPosition = GetNextSpawnPosition();
+            action = "player_spawn",
+            playerId = UserData.Instance.UserId,
+            position = new { x = spawnPosition.x, y = spawnPosition.y, z = spawnPosition.z },
+            spawnPointIndex = currentSpawnIndex,
+            maxHealth = UserData.Instance.Character.MaxHealth,
+            attackPower = UserData.Instance.Character.AttackPower
+        };
 
-            // 먼저 로컬 플레이어를 생성
-            SpawnLocalPlayer(spawnPosition);
+        string response = await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(spawnData));
+        Debug.Log($"Spawn response: {response}"); 
 
-            var spawnData = new
-            {
-                action = "player_spawn",
-                playerId = UserData.Instance.UserId,
-                position = new { x = spawnPosition.x, y = spawnPosition.y, z = spawnPosition.z },
-                maxHealth = UserData.Instance.Character.MaxHealth,
-                attackPower = UserData.Instance.Character.AttackPower
-            };
-
-            // 서버에 스폰 알림
-            string response = await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(spawnData));
-            Debug.Log($"Spawn response: {response}"); // 디버그용
-
-            if (!string.IsNullOrEmpty(response))
-            {
-                // 서버가 success를 보냈다면 대기 시작
-                await WaitAllPlayers();
-            }
-            else
-            {
-                Debug.LogError("Spawn response was empty");
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Error in SpawnPlayers: {ex.Message}");
-        }
     }
-
-
-    private async Task WaitAllPlayers()
+    catch (Exception ex)
     {
-        Debug.Log("Waiting for all players...");
-        // 모든 플레이어가 스폰될 때까지 대기
-        //while (!allPlayersSpawned && isRunning)
-        //{
-        //    await Task.Delay(100);
-        //}
-
-        Debug.Log("All players spawned, initializing game...");
-        isInitialized = true;
-        PendingMessages();
+        Debug.LogError($"Error in SpawnPlayers: {ex.Message}");
     }
+}
 
-    private void PendingMessages()
-    {
-        Debug.Log($"Processing {pendingMessages.Count} pending messages");
-        while (pendingMessages.Count > 0)
-        {
-            var message = pendingMessages.Dequeue();
-
-            // 스폰 메시지는 이미 처리되었으므로 다른 메시지들만 처리
-            if (message["action"].ToString() != "player_spawn")
-            {
-                NetworkMessage(message);
-            }
-        }
-    }
 
     private async Task ListenNetworkMessages()
     {
