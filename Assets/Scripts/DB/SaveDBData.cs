@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using System;
 
 [Serializable]
@@ -31,21 +32,39 @@ public class ErrorResponse
     public string message;
 }
 
-
 [Serializable]
 public class CharacterData
 {
-    public string PlayerName;
-    public string PlayerId;
-    public int Gems;
-    public int Coins;
-    public int MaxHealth;
-    public int HealthEnhancement;
-    public int AttackPower;
-    public int AttackEnhancement;
-    public int WeaponEnhancement;
-    public int ArmorEnhancement;
+   
+    [JsonProperty("PlayerName")]
+    public string PlayerName { get; set; }
 
+    [JsonProperty("PlayerId")]
+    public string PlayerId { get; set; }
+
+    [JsonProperty("Gems")]
+    public int Gems { get; set; }
+
+    [JsonProperty("Coins")]
+    public int Coins { get; set; }
+
+    [JsonProperty("MaxHealth")]
+    public int MaxHealth { get; set; }
+
+    [JsonProperty("HealthEnhancement")]
+    public int HealthEnhancement { get; set; }
+
+    [JsonProperty("AttackPower")]
+    public int AttackPower { get; set; }
+
+    [JsonProperty("AttackEnhancement")]
+    public int AttackEnhancement { get; set; }
+
+    [JsonProperty("WeaponEnhancement")]
+    public int WeaponEnhancement { get; set; }
+
+    [JsonProperty("ArmorEnhancement")]
+    public int ArmorEnhancement { get; set; }
 }
 
 [Serializable]
