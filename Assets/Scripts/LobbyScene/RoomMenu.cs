@@ -371,30 +371,42 @@ public class RoomMenu : MonoBehaviour
     {
         try
         {
-            while (isInRoom && !isSceneLoading) 
+            while (isInRoom && !isSceneLoading)
             {
                 string message = await ServerConnector.Instance.ReadMessage();
                 if (!string.IsNullOrEmpty(message))
                 {
+                    Debug.Log($"받은 메시지: {message}");
                     var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(message);
-                    if (data != null && data["action"]?.ToString() == "start_game" && data["status"]?.ToString() == "success")
+
+                    if (data != null)
                     {
-                        string sceneName = data["sceneName"].ToString();
-                        isInRoom = false; 
-                        await LoadGameScene(sceneName); 
-                        break;
-                    }
-                    else if (data["action"]?.ToString() == "get_room_list" && data["status"]?.ToString() == "success")
-                    {
-                        var rooms = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(data["rooms"].ToString());
-                        UpdateRoomList(rooms);
+                        string action = data["action"]?.ToString();
+                        string status = data["status"]?.ToString();
+
+                        if (action == "start_game" && status == "success")
+                        {
+                            string sceneName = data["sceneName"].ToString();
+                            Debug.Log($"게임 시작 메시지 수신: {sceneName}");
+                            isInRoom = false;
+                            isSceneLoading = true; // 씬 로딩 상태 설정
+                            await LoadGameScene(sceneName);
+                            break;
+                        }
+                        else if (action == "get_room_list" && status == "success")
+                        {
+                            var rooms = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(data["rooms"].ToString());
+                            UpdateRoomList(rooms);
+                        }
                     }
                 }
+                await Task.Delay(100); // 약간의 지연 추가
             }
         }
         catch (Exception ex)
         {
-            Debug.Log($"게임 시작 메시지 수신 중 오류: {ex.Message}");
+            Debug.LogError($"게임 시작 메시지 수신 중 오류: {ex.Message}");
+            isSceneLoading = false;
         }
     }
 
@@ -403,19 +415,20 @@ public class RoomMenu : MonoBehaviour
     {
         try
         {
+            Debug.Log($"씬 로드 시작: {sceneName}");
             AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
-            asyncLoad.allowSceneActivation = true;  // 씬 로드 완료 시 자동 활성화
+            asyncLoad.allowSceneActivation = true;
 
             while (!asyncLoad.isDone)
             {
                 await Task.Yield();
             }
+            Debug.Log("씬 로드 완료");
         }
         catch (Exception ex)
         {
-            isSceneLoading = false; // 예외 발생 시 초기화
-            Debug.Log($"씬 로드 중 오류 발생: {ex.Message}");
+            Debug.LogError($"씬 로드 중 오류 발생: {ex.Message}");
+            isSceneLoading = false;
         }
     }
-
 }
