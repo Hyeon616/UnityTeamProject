@@ -14,10 +14,29 @@ public class PatrollState : StateMachineBehaviour
 
     List<Transform> wayPoints = new List<Transform>();
     NavMeshAgent agent;
+    bool isPlayerSpawned = false;
+
+    private void OnPlayerSpawned()
+    {
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        if (playerObject != null)
+        {
+            player = playerObject.transform;
+            isPlayerSpawned = true;
+        }
+    }
 
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        player = GameObject.FindGameObjectWithTag("Player").transform;
+        GameManager.OnPlayerSpawnCompleted += OnPlayerSpawned;
+
+        GameObject existingPlayer = GameObject.FindGameObjectWithTag("Player");
+        if (existingPlayer != null)
+        {
+            player = existingPlayer.transform;
+            isPlayerSpawned = true;
+        }
+
         MonsterInfo info = animator.gameObject.GetComponent<MonsterInfo>();
         WayPoint = info.wayPoint;
         agent = animator.GetComponent<NavMeshAgent>();
@@ -64,10 +83,13 @@ public class PatrollState : StateMachineBehaviour
                 animator.SetBool("isPatrolling", false);
             }
 
-            float distance = Vector3.Distance(player.position, animator.transform.position);
-            if (distance < chaseRange)
+            if (isPlayerSpawned && player != null)
             {
-                animator.SetBool("isChasing", true);
+                float distance = Vector3.Distance(player.position, animator.transform.position);
+                if (distance < chaseRange)
+                {
+                    animator.SetBool("isChasing", true);
+                }
             }
         }
     }
@@ -78,5 +100,8 @@ public class PatrollState : StateMachineBehaviour
         {
             agent.SetDestination(agent.transform.position);
         }
+
+        GameManager.OnPlayerSpawnCompleted -= OnPlayerSpawned;
+
     }
 }

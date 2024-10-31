@@ -23,6 +23,8 @@ public class GameManager : MonoBehaviour
 
     private bool allPlayersSpawned = false;
 
+    public static event Action OnPlayerSpawnCompleted;
+
     private void OnDestroy()
     {
         isRunning = false;
@@ -53,35 +55,32 @@ public class GameManager : MonoBehaviour
         _ = ListenNetworkMessages();
     }
 
-    private async void SpawnPlayers()
-{
-    try
+    private void SpawnPlayers()
     {
-        Vector3 spawnPosition = GetNextSpawnPosition();
-        
-        // 먼저 로컬 플레이어를 생성
-        SpawnLocalPlayer(spawnPosition);
-
-        var spawnData = new
+        try
         {
-            action = "player_spawn",
-            playerId = UserData.Instance.UserId,
-            position = new { x = spawnPosition.x, y = spawnPosition.y, z = spawnPosition.z },
-            spawnPointIndex = currentSpawnIndex,
-            maxHealth = UserData.Instance.Character.MaxHealth,
-            attackPower = UserData.Instance.Character.AttackPower
-        };
+            Debug.Log($"[SpawnPlayers] Starting spawn process for player: {UserData.Instance.UserId}");
 
-        string response = await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(spawnData));
-        Debug.Log($"Spawn response: {response}"); 
+            var spawnData = new
+            {
+                action = "player_spawn",
+                playerId = UserData.Instance.UserId,
+                position = new { x = 0, y = 0, z = 0 }, // 임시 위치, 서버에서 할당된 인덱스로 실제 위치 결정
+                maxHealth = UserData.Instance.Character.MaxHealth,
+                attackPower = UserData.Instance.Character.AttackPower
+            };
 
+            string jsonData = JsonConvert.SerializeObject(spawnData);
+            Debug.Log($"[SpawnPlayers] Sending spawn data: {jsonData}");
+
+            _ = ServerConnector.Instance.SendMessage(jsonData);
+            isInitialized = true;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[SpawnPlayers] Error: {ex.Message}\n{ex.StackTrace}");
+        }
     }
-    catch (Exception ex)
-    {
-        Debug.LogError($"Error in SpawnPlayers: {ex.Message}");
-    }
-}
-
 
     private async Task ListenNetworkMessages()
     {
@@ -126,43 +125,42 @@ public class GameManager : MonoBehaviour
     {
         if (data == null || !data.ContainsKey("action")) return;
 
-        string action = data["action"].ToString();
-        Debug.Log($"Received network message: {action}"); // 디버그용
+        string action = data["action"].ToString(); 
+        string status = data["status"]?.ToString();
 
-        // 스폰 완료 메시지 처리
-        if (action == "all_players_ready")
+        Debug.Log($"[NetworkMessage] Received: {action}, Status: {status}");
+        Debug.Log($"[NetworkMessage] Full data: {JsonConvert.SerializeObject(data)}");
+
+        if (status != "success")
         {
-            Debug.Log("Received all players ready signal");
-            allPlayersSpawned = true;
+            Debug.LogError($"[NetworkMessage] Failed response: {data["message"]}");
             return;
         }
 
-        // 모든 플레이어가 스폰되기 전에는 스폰 메시지만 처리
-        if (!allPlayersSpawned)
+        try
         {
-            if (action == "player_spawn")
+            switch (action)
             {
-                PlayerSpawn(data);
+                case "player_spawn":
+                    if (!data.ContainsKey("playerId") || !data.ContainsKey("spawnIndex"))
+                    {
+                        Debug.LogError("[NetworkMessage] Missing required spawn data");
+                        Debug.Log($"[NetworkMessage] Available keys: {string.Join(", ", data.Keys)}");
+                        return;
+                    }
+                    PlayerSpawn(data);
+                    break;
+                case "player_state":
+                    PlayerState(data);
+                    break;
+                case "player_action":
+                    PlayerAction(data);
+                    break;
             }
-            else
-            {
-                pendingMessages.Enqueue(data);
-            }
-            return;
         }
-
-        // 모든 플레이어 스폰 완료 후 모든 메시지 처리
-        switch (action)
+        catch (Exception ex)
         {
-            case "player_spawn":
-                PlayerSpawn(data);
-                break;
-            case "player_state":
-                PlayerState(data);
-                break;
-            case "player_action":
-                PlayerAction(data);
-                break;
+            Debug.LogError($"[NetworkMessage] Error processing {action}: {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -171,54 +169,76 @@ public class GameManager : MonoBehaviour
         try
         {
             string playerId = data["playerId"].ToString();
-            Debug.Log($"Processing spawn for player: {playerId}");
+            int spawnIndex = Convert.ToInt32(data["spawnIndex"]);
+            Debug.Log($"[PlayerSpawn] Processing for player: {playerId}, spawn index: {spawnIndex}");
 
+            if (spawnIndex >= spawnPoints.Count)
+            {
+                Debug.LogError($"[PlayerSpawn] Invalid spawn index: {spawnIndex}");
+                return;
+            }
+
+            Vector3 spawnPosition = spawnPoints[spawnIndex].position;
+
+            // 자신의 캐릭터인 경우
             if (playerId == UserData.Instance.UserId)
             {
-                Debug.Log("Ignoring own spawn message");
+                if (!players.ContainsKey(playerId))
+                {
+                    SpawnLocalPlayer(spawnPosition);
+                }
                 return;
             }
 
+            // 다른 플레이어의 캐릭터인 경우
             if (players.ContainsKey(playerId))
             {
-                Debug.Log($"Player {playerId} already exists, updating position");
-                var positionData = JsonConvert.DeserializeObject<Dictionary<string, float>>(data["position"].ToString());
-                Vector3 spawnPosition = new Vector3(positionData["x"], positionData["y"], positionData["z"]);
                 players[playerId].transform.position = spawnPosition;
+                Debug.Log($"[PlayerSpawn] Updated existing player {playerId} position");
                 return;
             }
 
-            var newPositionData = JsonConvert.DeserializeObject<Dictionary<string, float>>(data["position"].ToString());
-            Vector3 newSpawnPosition = new Vector3(newPositionData["x"], newPositionData["y"], newPositionData["z"]);
+            // 새로운 다른 플레이어 생성
+            var player = Instantiate(playerPrefab, spawnPosition, Quaternion.identity);
+            int maxHealth = Convert.ToInt32(data["maxHealth"]);
+            int attackPower = Convert.ToInt32(data["attackPower"]);
 
-            Debug.Log($"Spawning new player at position: {newSpawnPosition}");
-            var player = Instantiate(playerPrefab, newSpawnPosition, Quaternion.identity);
             player.Initialize(playerId, false);
             players[playerId] = player;
-
-            Debug.Log($"Remote player spawned successfully: {playerId}");
+            Debug.Log($"[PlayerSpawn] Spawned new player {playerId} at index {spawnIndex}");
         }
         catch (Exception ex)
         {
-            Debug.LogError($"Error spawning player: {ex.Message}");
+            Debug.LogError($"[PlayerSpawn] Error: {ex.Message}\nData: {JsonConvert.SerializeObject(data)}");
         }
     }
 
     private void SpawnLocalPlayer(Vector3 position)
     {
-        if (players.ContainsKey(UserData.Instance.UserId))
+        try
         {
-            Debug.LogWarning("Local player already exists!");
-            return;
+            Debug.Log($"[SpawnLocalPlayer] Spawning at {position}");
+
+            if (players.ContainsKey(UserData.Instance.UserId))
+            {
+                Debug.Log("[SpawnLocalPlayer] Local player already exists");
+                return;
+            }
+
+            var player = Instantiate(playerPrefab, position, Quaternion.identity);
+            player.Initialize(UserData.Instance.UserId, true);
+            players[UserData.Instance.UserId] = player;
+            LocalPlayer = player;
+
+            OnPlayerSpawnCompleted?.Invoke();
+
+            StartCoroutine(SendPlayerState());
+            Debug.Log("[SpawnLocalPlayer] Successfully spawned");
         }
-
-        var player = Instantiate(playerPrefab, position, Quaternion.identity);
-        player.Initialize(UserData.Instance.UserId, true);
-        players[UserData.Instance.UserId] = player;
-        LocalPlayer = player;
-
-        StartCoroutine(SendPlayerState());
-        Debug.Log($"Local player spawned: {UserData.Instance.UserId}");
+        catch (Exception ex)
+        {
+            Debug.LogError($"[SpawnLocalPlayer] Error: {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
 
@@ -232,9 +252,11 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator SendPlayerState()
     {
-        while (true)
+        Debug.Log("[SendPlayerState] Starting state broadcast");
+
+        while (isRunning && LocalPlayer != null)
         {
-            if (LocalPlayer != null)
+            try
             {
                 var position = LocalPlayer.transform.position;
                 var rotation = LocalPlayer.transform.rotation;
@@ -254,6 +276,11 @@ public class GameManager : MonoBehaviour
 
                 _ = ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(stateData));
             }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[SendPlayerState] Error: {ex.Message}");
+            }
+
             yield return new WaitForSeconds(0.1f);
         }
     }

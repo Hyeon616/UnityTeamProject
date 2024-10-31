@@ -334,88 +334,93 @@ public class RoomMenu : MonoBehaviour
 
     private async void OnClickedStartScene()
     {
-        if (!isRoomHost || isSceneLoading)
+        if (!isRoomHost || isSceneLoading) return;
+
+        try
         {
-            return;
+            isSceneLoading = true;
+
+            var startGameRequest = new
+            {
+                action = "start_game",
+                roomName = selectedRoomName,
+                hostId = UserData.Instance.UserId,
+                sceneName = MapMenu.SelectedMap.SceneName
+            };
+
+            string jsonRequest = JsonConvert.SerializeObject(startGameRequest);
+            Debug.Log($"[StartGame] 요청 전송: {jsonRequest}");
+
+            string response = await ServerConnector.Instance.SendMessage(jsonRequest);
+            Debug.Log($"[StartGame] 응답 수신: {response}");
+
+            var responseData = JsonConvert.DeserializeObject<Dictionary<string, object>>(response);
+
+            if (responseData["status"].ToString() != "success")
+            {
+                Debug.LogError($"[StartGame] 게임 시작 실패: {responseData["message"]}");
+                isSceneLoading = false;
+            }
         }
-
-        isSceneLoading = true;
-
-        var startGameRequest = new
+        catch (Exception ex)
         {
-            action = "start_game",
-            roomName = selectedRoomName,
-            hostId = UserData.Instance.UserId,
-            sceneName = MapMenu.SelectedMap.SceneName
-        };
-
-        string jsonRequest = JsonConvert.SerializeObject(startGameRequest);
-        string response = await ServerConnector.Instance.SendMessage(jsonRequest);
-
-        var responseData = JsonConvert.DeserializeObject<Dictionary<string, object>>(response);
-
-        if (responseData["status"].ToString() == "success")
-        {
-            string sceneName = responseData["sceneName"].ToString();
-
-            await LoadGameScene(sceneName);
-
-        }
-        else
-        {
-            Debug.LogError($"게임 시작 실패: {responseData["message"]}");
+            Debug.LogError($"[StartGame] 에러 발생: {ex.Message}");
+            isSceneLoading = false;
         }
     }
 
     private async Task ListenRoomState()
     {
+        Debug.Log($"[ListenRoomState] 시작 - Player ID: {UserData.Instance.UserId}");
+
         try
         {
             while (isInRoom && !isSceneLoading)
             {
                 string message = await ServerConnector.Instance.ReadMessage();
-                if (!string.IsNullOrEmpty(message))
+                if (string.IsNullOrEmpty(message)) continue;
+
+                Debug.Log($"[ListenRoomState] 받은 메시지: {message}");
+
+                var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(message);
+                if (data == null || !data.ContainsKey("action")) continue;
+
+                string action = data["action"].ToString();
+
+                switch (action)
                 {
-                    Debug.Log($"받은 메시지: {message}");
-                    var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(message);
+                    case "start_game" when data["status"].ToString() == "success":
+                        Debug.Log($"[ListenRoomState] 게임 시작 메시지 수신 - Player: {UserData.Instance.UserId}");
+                        string sceneName = data["sceneName"].ToString();
+                        isInRoom = false;
+                        isSceneLoading = true;
+                        await LoadGameScene(sceneName);
+                        return;
 
-                    if (data != null)
-                    {
-                        string action = data["action"]?.ToString();
-                        string status = data["status"]?.ToString();
-
-                        if (action == "start_game" && status == "success")
-                        {
-                            string sceneName = data["sceneName"].ToString();
-                            Debug.Log($"게임 시작 메시지 수신: {sceneName}");
-                            isInRoom = false;
-                            isSceneLoading = true; // 씬 로딩 상태 설정
-                            await LoadGameScene(sceneName);
-                            break;
-                        }
-                        else if (action == "get_room_list" && status == "success")
-                        {
-                            var rooms = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(data["rooms"].ToString());
-                            UpdateRoomList(rooms);
-                        }
-                    }
+                    case "get_room_list" when data["status"].ToString() == "success":
+                        var rooms = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(data["rooms"].ToString());
+                        UpdateRoomList(rooms);
+                        break;
                 }
-                await Task.Delay(100); // 약간의 지연 추가
+
+                await Task.Delay(10); // 짧은 대기 시간 추가
             }
         }
         catch (Exception ex)
         {
-            Debug.LogError($"게임 시작 메시지 수신 중 오류: {ex.Message}");
+            Debug.LogError($"[ListenRoomState] 에러 발생: {ex.Message}\n{ex.StackTrace}");
             isSceneLoading = false;
         }
     }
+
 
 
     private async Task LoadGameScene(string sceneName)
     {
         try
         {
-            Debug.Log($"씬 로드 시작: {sceneName}");
+            Debug.Log($"[LoadGameScene] 씬 로드 시작: {sceneName}");
+
             AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
             asyncLoad.allowSceneActivation = true;
 
@@ -423,11 +428,12 @@ public class RoomMenu : MonoBehaviour
             {
                 await Task.Yield();
             }
-            Debug.Log("씬 로드 완료");
+
+            Debug.Log($"[LoadGameScene] 씬 로드 완료: {sceneName}");
         }
         catch (Exception ex)
         {
-            Debug.LogError($"씬 로드 중 오류 발생: {ex.Message}");
+            Debug.LogError($"[LoadGameScene] 에러 발생: {ex.Message}");
             isSceneLoading = false;
         }
     }
