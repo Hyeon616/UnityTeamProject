@@ -10,6 +10,22 @@ public class NetworkPlayerAnimator : playerAnimator
     private string playerId;
     private float syncInterval = 0.1f; // 동기화 간격
     private float lastSyncTime;
+    private float moveSpeed = 15f;  
+    private float rotateSpeed = 15f;
+
+
+    private Vector3 targetPosition;
+    private Quaternion targetRotation;
+    private struct AnimationState
+    {
+        public bool isRunning;
+        public bool isAction;
+        public int skillA;
+        public string currentTrigger;
+        public Dictionary<string, bool> activatedEffects;
+    }
+
+    private AnimationState currentState;
 
     private Vector3 lastSentPosition;
     private Quaternion lastSentRotation;
@@ -96,6 +112,8 @@ public class NetworkPlayerAnimator : playerAnimator
     {
         if (!isLocalPlayer)
         {
+            transform.position = Vector3.Lerp(transform.position, targetPosition, moveSpeed * Time.deltaTime);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotateSpeed * Time.deltaTime);
 
             base.ApplyGravity();
             return;
@@ -106,8 +124,20 @@ public class NetworkPlayerAnimator : playerAnimator
         // 위치와 상태 동기화
         if (Time.time - lastSyncTime >= syncInterval)
         {
-            SendPlayerState();
-            lastSyncTime = Time.time;
+            bool positionChanged = Vector3.Distance(lastSentPosition, transform.position) > 0.01f;
+            bool rotationChanged = Quaternion.Angle(lastSentRotation, transform.rotation) > 1f;
+            bool stateChanged = lastSentIsRunning != _isRunning || lastSentIsAction != isAction;
+
+            if (positionChanged || rotationChanged || stateChanged)
+            {
+                SendAnimationState();
+                lastSyncTime = Time.time;
+
+                lastSentPosition = transform.position;
+                lastSentRotation = transform.rotation;
+                lastSentIsRunning = _isRunning;
+                lastSentIsAction = isAction;
+            }
         }
     }
 
@@ -197,6 +227,7 @@ public class NetworkPlayerAnimator : playerAnimator
     public override void OnClick()
     {
         if (!isLocalPlayer) return;
+        //if (isAction) return;
         base.OnClick();
         SendActionEvent("attack");
     }
@@ -209,10 +240,52 @@ public class NetworkPlayerAnimator : playerAnimator
         {
             action = "player_action",
             playerId = playerId,
-            actionName = actionName
+            actionName = actionName,
+            position = new { x = transform.position.x, y = transform.position.y, z = transform.position.z },
+            rotation = new { x = transform.rotation.x, y = transform.rotation.y, z = transform.rotation.z, w = transform.rotation.w },
+            animation = new
+            {
+                currentTrigger = actionName,
+                skillA = _skillA,
+                isAction = isAction
+            },
+            effects = new
+            {
+                attackEffect = actionName == "attack",
+                dashEffect = actionName == "dash",
+                skillAEffect = actionName == "skillA",
+                skillBEffect = actionName == "skillB"
+            }
         };
 
         await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(actionData));
+    }
+
+    private async void SendAnimationState()
+    {
+        var animationData = new
+        {
+            action = "player_state",
+            playerId = playerId,
+            position = new { x = transform.position.x, y = transform.position.y, z = transform.position.z },
+            rotation = new { x = transform.rotation.x, y = transform.rotation.y, z = transform.rotation.z, w = transform.rotation.w },
+            animation = new
+            {
+                isRunning = _isRunning,
+                isAction = isAction,
+                skillA = _skillA,
+                currentTrigger = currentState.currentTrigger
+            },
+            effects = new Dictionary<string, bool>(),
+            stats = new
+            {
+                currentHealth = _hp,
+                maxHealth = UserData.Instance.Character.MaxHealth,
+                attackPower = UserData.Instance.Character.AttackPower
+            }
+        };
+
+        await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(animationData));
     }
 
     public void UpdateState(Vector3 position, Quaternion rotation, bool isRunning, bool inAction, int currentHealth, int maxHealth, int attackPower)
@@ -220,13 +293,16 @@ public class NetworkPlayerAnimator : playerAnimator
         if (isLocalPlayer) return;
 
         // 위치와 회전을 빠르게 반영하기 위해 보간 비율을 조정
-        transform.position = Vector3.Lerp(transform.position, position, 0.2f);
-        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 0.2f);
+        targetPosition = position;
+        targetRotation = rotation;
 
         _isRunning = isRunning;
+        isAction = inAction;
         _hp = currentHealth;
         _str = attackPower;
+
         _animator.SetBool("isRunning", isRunning);
+
     }
 
     public void ExecuteAction(string actionName)
@@ -259,6 +335,7 @@ public class NetworkPlayerAnimator : playerAnimator
 
     private IEnumerator ExecuteAttack()
     {
+        isAction = true;
         _animator.SetTrigger("onWeaponAttack");
 
         // 공격 이펙트
@@ -267,7 +344,7 @@ public class NetworkPlayerAnimator : playerAnimator
         if (playerSound != null) playerSound.BaseAttack();
         yield return new WaitForSeconds(0.5f);
 
-
+        isAction = false;
     }
 
     private IEnumerator ExecuteSkillA()
@@ -279,12 +356,19 @@ public class NetworkPlayerAnimator : playerAnimator
         _animator.Play("ChargeSkillA_Skill");
 
         // 이펙트
-        if (attack != null)
+         if (attack != null)
         {
-            attack.transform.Find("Slash").gameObject.SetActive(true);
+            var slashEffect = attack.transform.Find("Slash").gameObject;
+            slashEffect.SetActive(true);
             yield return new WaitForSeconds(2.9f);
-            attack.transform.Find("Slash").gameObject.SetActive(false);
+            slashEffect.SetActive(false);
         }
+
+        if (playerSound != null)
+        {
+            playerSound.SkillA();
+        }
+
 
         // 사운드
         if (playerSound != null) playerSound.SkillA();
@@ -299,7 +383,7 @@ public class NetworkPlayerAnimator : playerAnimator
 
         StartCoroutine(ActionTimer("SkillA_unlock 1", 2.2f));
 
-        // 이펙트들
+       
         SkillBEffectGround();
         yield return new WaitForSeconds(0.27f);
         SkillBEffectWeapon();
@@ -307,7 +391,8 @@ public class NetworkPlayerAnimator : playerAnimator
         SkillBEffectExplosion();
 
         // 사운드
-        if (playerSound != null) playerSound.SkillB();
+        if (playerSound != null)
+            playerSound.SkillB();
 
         yield return new WaitForSeconds(1.0f);
         isAction = false;

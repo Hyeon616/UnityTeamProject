@@ -13,7 +13,7 @@ public class playerAnimator : MonoBehaviour
     public CharacterController _characterController;
     private Vector3 _moveDirection;              
     public bool _isRunning = false;             
-    private int _skillA = -1;                    
+    public int _skillA = -1;                    
     private int _skillB = -1;                    
     public bool isAction = false;                
     private float _gravity = -9.81f;             

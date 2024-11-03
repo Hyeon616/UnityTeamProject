@@ -382,28 +382,48 @@ public class RoomMenu : MonoBehaviour
 
                 Debug.Log($"[ListenRoomState] 받은 메시지: {message}");
 
-                var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(message);
-                if (data == null || !data.ContainsKey("action")) continue;
+                // 여러 JSON 메시지 분리
+                var messages = message.Split(new[] { "}{" }, StringSplitOptions.None)
+                    .Select(m => m.EndsWith("}") ? m : m + "}")
+                    .Select(m => m.StartsWith("{") ? m : "{" + m);
 
-                string action = data["action"].ToString();
-
-                switch (action)
+                foreach (var msg in messages)
                 {
-                    case "start_game" when data["status"].ToString() == "success":
-                        Debug.Log($"[ListenRoomState] 게임 시작 메시지 수신 - Player: {UserData.Instance.UserId}");
-                        string sceneName = data["sceneName"].ToString();
-                        isInRoom = false;
-                        isSceneLoading = true;
-                        await LoadGameScene(sceneName);
-                        return;
+                    try
+                    {
+                        var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(msg);
+                        if (data == null || !data.ContainsKey("action")) continue;
 
-                    case "get_room_list" when data["status"].ToString() == "success":
-                        var rooms = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(data["rooms"].ToString());
-                        UpdateRoomList(rooms);
-                        break;
+                        string action = data["action"].ToString();
+                        string status = data["status"]?.ToString();
+
+                        Debug.Log($"[ListenRoomState] 처리 중: Action={action}, Status={status}");
+
+                        if (status != "success") continue;
+
+                        switch (action)
+                        {
+                            case "start_game":
+                                Debug.Log($"[ListenRoomState] 게임 시작 메시지 수신 - Player: {UserData.Instance.UserId}");
+                                string sceneName = data["sceneName"].ToString();
+                                isInRoom = false;
+                                isSceneLoading = true;
+                                await LoadGameScene(sceneName);
+                                return;
+
+                            case "get_room_list":
+                                var rooms = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(data["rooms"].ToString());
+                                UpdateRoomList(rooms);
+                                break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"[ListenRoomState] 메시지 처리 중 오류: {ex.Message}\n메시지: {msg}");
+                    }
                 }
 
-                await Task.Delay(10); // 짧은 대기 시간 추가
+                await Task.Delay(10);
             }
         }
         catch (Exception ex)

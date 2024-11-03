@@ -49,38 +49,36 @@ public class GameManager : MonoBehaviour
             Debug.Log("StartPoint not found in the scene!");
         }
     }
-    private void Start()
+    private async void Start()
     {
-        SpawnPlayers();
-        _ = ListenNetworkMessages();
-    }
+        Debug.Log("[GameManager] Scene 시작 - 플레이어 생성 요청");
 
-    private void SpawnPlayers()
-    {
+        // 플레이어 스폰 요청
+        var spawnRequest = new
+        {
+            action = "player_spawn",
+            playerId = UserData.Instance.UserId,
+            maxHealth = UserData.Instance.Character.MaxHealth,
+            attackPower = UserData.Instance.Character.AttackPower
+        };
+
         try
         {
-            Debug.Log($"[SpawnPlayers] Starting spawn process for player: {UserData.Instance.UserId}");
+            string jsonRequest = JsonConvert.SerializeObject(spawnRequest);
+            Debug.Log($"[GameManager] 스폰 요청 전송: {jsonRequest}");
+            await ServerConnector.Instance.SendMessage(jsonRequest);
 
-            var spawnData = new
-            {
-                action = "player_spawn",
-                playerId = UserData.Instance.UserId,
-                position = new { x = 0, y = 0, z = 0 }, // 임시 위치, 서버에서 할당된 인덱스로 실제 위치 결정
-                maxHealth = UserData.Instance.Character.MaxHealth,
-                attackPower = UserData.Instance.Character.AttackPower
-            };
-
-            string jsonData = JsonConvert.SerializeObject(spawnData);
-            Debug.Log($"[SpawnPlayers] Sending spawn data: {jsonData}");
-
-            _ = ServerConnector.Instance.SendMessage(jsonData);
             isInitialized = true;
+
+            // 네트워크 메시지 리스닝 시작
+            _ = ListenNetworkMessages();
         }
         catch (Exception ex)
         {
-            Debug.LogError($"[SpawnPlayers] Error: {ex.Message}\n{ex.StackTrace}");
+            Debug.LogError($"[GameManager] 플레이어 생성 요청 실패: {ex.Message}");
         }
     }
+
 
     private async Task ListenNetworkMessages()
     {
@@ -170,11 +168,11 @@ public class GameManager : MonoBehaviour
         {
             string playerId = data["playerId"].ToString();
             int spawnIndex = Convert.ToInt32(data["spawnIndex"]);
-            Debug.Log($"[PlayerSpawn] Processing for player: {playerId}, spawn index: {spawnIndex}");
+            Debug.Log($"Spawning player: {playerId} at index: {spawnIndex}");
 
             if (spawnIndex >= spawnPoints.Count)
             {
-                Debug.LogError($"[PlayerSpawn] Invalid spawn index: {spawnIndex}");
+                Debug.LogError($"Invalid spawn index: {spawnIndex}");
                 return;
             }
 
@@ -187,29 +185,35 @@ public class GameManager : MonoBehaviour
                 {
                     SpawnLocalPlayer(spawnPosition);
                 }
-                return;
+              //  return;
             }
 
             // 다른 플레이어의 캐릭터인 경우
             if (players.ContainsKey(playerId))
             {
                 players[playerId].transform.position = spawnPosition;
-                Debug.Log($"[PlayerSpawn] Updated existing player {playerId} position");
-                return;
+                Debug.Log($"Updated existing player {playerId} position");
+              //  return;
             }
 
             // 새로운 다른 플레이어 생성
-            var player = Instantiate(playerPrefab, spawnPosition, Quaternion.identity);
+            var playerObject = Instantiate(playerPrefab, spawnPosition, Quaternion.identity);
+            var networkPlayer = playerObject.GetComponent<NetworkPlayerAnimator>();
+
+            // 서버에서 받은 정확한 능력치 값 사용
             int maxHealth = Convert.ToInt32(data["maxHealth"]);
             int attackPower = Convert.ToInt32(data["attackPower"]);
 
-            player.Initialize(playerId, false);
-            players[playerId] = player;
-            Debug.Log($"[PlayerSpawn] Spawned new player {playerId} at index {spawnIndex}");
+            networkPlayer.Initialize(playerId, false);
+            networkPlayer._hp = maxHealth;  // 초기 HP를 maxHealth로 설정
+            networkPlayer._str = attackPower;
+            players[playerId] = networkPlayer;
+
+            Debug.Log($"Spawned new player {playerId} at index {spawnIndex} with MaxHealth: {maxHealth}, AttackPower: {attackPower}");
         }
         catch (Exception ex)
         {
-            Debug.LogError($"[PlayerSpawn] Error: {ex.Message}\nData: {JsonConvert.SerializeObject(data)}");
+            Debug.LogError($"Error in PlayerSpawn: {ex.Message}\nStack trace: {ex.StackTrace}");
         }
     }
 
@@ -217,30 +221,33 @@ public class GameManager : MonoBehaviour
     {
         try
         {
-            Debug.Log($"[SpawnLocalPlayer] Spawning at {position}");
+            Debug.Log($"Spawning local player at {position}");
 
             if (players.ContainsKey(UserData.Instance.UserId))
             {
-                Debug.Log("[SpawnLocalPlayer] Local player already exists");
+                Debug.Log("Local player already exists");
                 return;
             }
 
-            var player = Instantiate(playerPrefab, position, Quaternion.identity);
-            player.Initialize(UserData.Instance.UserId, true);
-            players[UserData.Instance.UserId] = player;
-            LocalPlayer = player;
+            var playerObject = Instantiate(playerPrefab, position, Quaternion.identity);
+            var networkPlayer = playerObject.GetComponent<NetworkPlayerAnimator>();
+            networkPlayer.Initialize(UserData.Instance.UserId, true);
+
+            // UserData의 능력치 값 사용
+            networkPlayer._hp = UserData.Instance.Character.MaxHealth;
+            networkPlayer._str = UserData.Instance.Character.AttackPower;
+
+            players[UserData.Instance.UserId] = networkPlayer;
+            LocalPlayer = networkPlayer;
 
             OnPlayerSpawnCompleted?.Invoke();
-
-            StartCoroutine(SendPlayerState());
-            Debug.Log("[SpawnLocalPlayer] Successfully spawned");
+            Debug.Log($"Local player spawn completed with MaxHealth: {UserData.Instance.Character.MaxHealth}, AttackPower: {UserData.Instance.Character.AttackPower}");
         }
         catch (Exception ex)
         {
-            Debug.LogError($"[SpawnLocalPlayer] Error: {ex.Message}\n{ex.StackTrace}");
+            Debug.LogError($"Error in SpawnLocalPlayer: {ex.Message}\nStack trace: {ex.StackTrace}");
         }
     }
-
 
     private Vector3 GetNextSpawnPosition()
     {
@@ -253,6 +260,8 @@ public class GameManager : MonoBehaviour
     private IEnumerator SendPlayerState()
     {
         Debug.Log("[SendPlayerState] Starting state broadcast");
+
+        WaitForSeconds wait = new WaitForSeconds(0.25f);
 
         while (isRunning && LocalPlayer != null)
         {
@@ -287,42 +296,102 @@ public class GameManager : MonoBehaviour
 
     private void PlayerState(Dictionary<string, object> data)
     {
-        string playerId = data["playerId"].ToString();
-        if (playerId == UserData.Instance.UserId) return;
-
-        // 아직 플레이어가 생성되지 않았다면 생성
-        if (!players.ContainsKey(playerId))
+        try
         {
-            PlayerSpawn(data); // 플레이어를 먼저 생성
-        }
+            if (!data.ContainsKey("playerId"))
+            {
+                Debug.LogError("State data missing playerId");
+                return;
+            }
 
-        // 플레이어 상태 업데이트
-        if (players.TryGetValue(playerId, out NetworkPlayerAnimator player))
-        {
-            var positionData = JsonConvert.DeserializeObject<Dictionary<string, float>>(data["position"].ToString());
-            var rotationData = JsonConvert.DeserializeObject<Dictionary<string, float>>(data["rotation"].ToString());
+            string playerId = data["playerId"].ToString();
+            if (playerId == UserData.Instance.UserId) return;
+
+            if (!players.ContainsKey(playerId))
+            {
+                Debug.LogWarning($"Received state for non-existent player: {playerId}");
+                return;
+            }
+
+            var player = players[playerId];
+            if (player == null) return;
+
+            // Position과 Rotation 파싱
+            var positionData = JsonConvert.DeserializeObject<Dictionary<string, float>>(
+                JsonConvert.SerializeObject(data["position"]));
+            var rotationData = JsonConvert.DeserializeObject<Dictionary<string, float>>(
+                JsonConvert.SerializeObject(data["rotation"]));
 
             Vector3 position = new Vector3(positionData["x"], positionData["y"], positionData["z"]);
             Quaternion rotation = new Quaternion(rotationData["x"], rotationData["y"], rotationData["z"], rotationData["w"]);
 
-            bool isRunning = (bool)data["isRunning"];
-            bool isAction = (bool)data["isAction"];
+            // State 파싱
+            bool isRunning = data.ContainsKey("isRunning") ? Convert.ToBoolean(data["isRunning"]) : false;
+            bool isAction = data.ContainsKey("isAction") ? Convert.ToBoolean(data["isAction"]) : false;
+
+            // Stats 파싱 - 서버에서 받은 정확한 값 사용
             int currentHealth = Convert.ToInt32(data["currentHealth"]);
             int maxHealth = Convert.ToInt32(data["maxHealth"]);
             int attackPower = Convert.ToInt32(data["attackPower"]);
 
+            // Animation 데이터 처리
+            if (data.ContainsKey("animation"))
+            {
+                var animationData = JsonConvert.DeserializeObject<Dictionary<string, object>>(
+                    JsonConvert.SerializeObject(data["animation"]));
+                if (animationData.ContainsKey("currentTrigger"))
+                {
+                    string currentTrigger = animationData["currentTrigger"].ToString();
+                    if (!string.IsNullOrEmpty(currentTrigger))
+                    {
+                        player.ExecuteAction(currentTrigger);
+                    }
+                }
+            }
+
             player.UpdateState(position, rotation, isRunning, isAction, currentHealth, maxHealth, attackPower);
         }
-
-        
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error in PlayerState: {ex.Message}\nStack trace: {ex.StackTrace}");
+        }
     }
 
     private void PlayerAction(Dictionary<string, object> data)
     {
-        string playerId = data["playerId"].ToString();
-        if (playerId == UserData.Instance.UserId || !players.ContainsKey(playerId)) return;
+        try
+        {
+            string playerId = data["playerId"].ToString();
+            if (playerId == UserData.Instance.UserId || !players.ContainsKey(playerId))
+            {
+                return;
+            }
 
-        string actionName = data["actionName"].ToString();
-        players[playerId].ExecuteAction(actionName);
+            var player = players[playerId];
+
+            // 위치 정보 업데이트
+            if (data.ContainsKey("position") && data.ContainsKey("rotation"))
+            {
+                var positionData = JsonConvert.DeserializeObject<Dictionary<string, float>>(
+                    JsonConvert.SerializeObject(data["position"]));
+                var rotationData = JsonConvert.DeserializeObject<Dictionary<string, float>>(
+                    JsonConvert.SerializeObject(data["rotation"]));
+
+                Vector3 position = new Vector3(positionData["x"], positionData["y"], positionData["z"]);
+                Quaternion rotation = new Quaternion(rotationData["x"], rotationData["y"], rotationData["z"], rotationData["w"]);
+
+                player.transform.position = position;
+                player.transform.rotation = rotation;
+            }
+
+            string actionName = data["actionName"].ToString();
+            player.ExecuteAction(actionName); 
+
+            Debug.Log($"Executed action {actionName} for player {playerId}");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error in PlayerAction: {ex.Message}\nStack trace: {ex.StackTrace}");
+        }
     }
 }
