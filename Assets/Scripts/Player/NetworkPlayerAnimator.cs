@@ -6,16 +6,11 @@ using UnityEngine.InputSystem;
 
 public class NetworkPlayerAnimator : playerAnimator
 {
-    private bool isLocalPlayer;
-    private string playerId;
-    private float syncInterval = 0.1f; // 동기화 간격
+    public bool isLocalPlayer;
+    public string playerId;
     private float lastSyncTime;
-    private float moveSpeed = 15f;  
-    private float rotateSpeed = 15f;
+    private float rotateSpeed = 7f;
 
-
-    private Vector3 targetPosition;
-    private Quaternion targetRotation;
     private struct AnimationState
     {
         public bool isRunning;
@@ -26,12 +21,48 @@ public class NetworkPlayerAnimator : playerAnimator
     }
 
     private AnimationState currentState;
+    private Vector3 targetPosition;
+    private Vector3 previousPosition;
+    private Quaternion targetRotation;
+    private Quaternion previousRotation;
 
     private Vector3 lastSentPosition;
     private Quaternion lastSentRotation;
     private bool lastSentIsRunning;
     private bool lastSentIsAction;
     private int lastSentHealth;
+
+    private Vector3 velocityVector = Vector3.zero;
+    private float positionSmoothTime = 0.08f; 
+    private const float MIN_DISTANCE_THRESHOLD = 0.01f;
+    private float syncInterval = 0.1f; // 동기화 간격
+
+    private float moveSpeed = 3f;      // 이동 속도
+    private Vector3 currentVelocity;
+
+
+
+    private Vector3 networkPosition;
+    private Vector3 networkVelocity;
+    private Vector3 previousTargetPosition;
+    private float lastPacketTime;
+    private const float VELOCITY_LERP_SPEED = 10f;
+    private Queue<TransformState> positionBuffer = new Queue<TransformState>();
+    private const int BUFFER_SIZE = 2;
+
+    private struct TransformState
+    {
+        public Vector3 position;
+        public Quaternion rotation;
+        public float timestamp;
+
+        public TransformState(Vector3 pos, Quaternion rot, float time)
+        {
+            position = pos;
+            rotation = rot;
+            timestamp = time;
+        }
+    }
 
 
     public void Initialize(string id, bool isLocal)
@@ -94,45 +125,49 @@ public class NetworkPlayerAnimator : playerAnimator
 
     }
 
-    private void Start()
-    {
-        base.Start();
-        if (isLocalPlayer)
-        {
-            // UserData에서 스탯 초기화
-            _hp = UserData.Instance.Character.MaxHealth;
-            _str = UserData.Instance.Character.AttackPower;
-        }
-
-
-    }
-
 
     protected new void Update()
     {
+
         if (!isLocalPlayer)
         {
-            transform.position = Vector3.Lerp(transform.position, targetPosition, moveSpeed * Time.deltaTime);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotateSpeed * Time.deltaTime);
+            // 다른 플레이어의 이동 처리
+            if (Vector3.Distance(transform.position, targetPosition) > 0.01f)
+            {
+                // moveSpeed로 목표 지점을 향해 이동
+                transform.position = Vector3.MoveTowards(
+                    transform.position,
+                    targetPosition,
+                    moveSpeed * Time.deltaTime
+                );
+
+                // 회전도 부드럽게 처리
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation,
+                    targetRotation,
+                    360f * Time.deltaTime  // 1초에 한바퀴 회전 가능
+                );
+            }
 
             base.ApplyGravity();
             return;
         }
-
         base.Update();
 
         // 위치와 상태 동기화
         if (Time.time - lastSyncTime >= syncInterval)
         {
-            bool positionChanged = Vector3.Distance(lastSentPosition, transform.position) > 0.01f;
-            bool rotationChanged = Quaternion.Angle(lastSentRotation, transform.rotation) > 1f;
-            bool stateChanged = lastSentIsRunning != _isRunning || lastSentIsAction != isAction;
+            bool shouldSync = Vector3.Distance(lastSentPosition, transform.position) > 0.01f ||
+                            Quaternion.Angle(lastSentRotation, transform.rotation) > 1f ||
+                            lastSentIsRunning != _isRunning ||
+                            lastSentIsAction != isAction;
 
-            if (positionChanged || rotationChanged || stateChanged)
+            if (shouldSync)
             {
-                SendAnimationState();
+                SendPlayerState();
                 lastSyncTime = Time.time;
 
+                // 마지막 전송 상태 저장
                 lastSentPosition = transform.position;
                 lastSentRotation = transform.rotation;
                 lastSentIsRunning = _isRunning;
@@ -143,37 +178,20 @@ public class NetworkPlayerAnimator : playerAnimator
 
     private async void SendPlayerState()
     {
-        bool positionChanged = Vector3.Distance(lastSentPosition, transform.position) > 0.01f;
-        bool rotationChanged = Quaternion.Angle(lastSentRotation, transform.rotation) > 1f;
-        bool stateChanged = lastSentIsRunning != _isRunning || lastSentIsAction != isAction;
-
-        // 위치, 회전 또는 상태가 변경되었을 때만 서버에 전송
-        if (positionChanged || rotationChanged || stateChanged)
+        var stateData = new
         {
-            var position = new { x = transform.position.x, y = transform.position.y, z = transform.position.z };
-            var rotation = new { x = transform.rotation.x, y = transform.rotation.y, z = transform.rotation.z, w = transform.rotation.w };
+            action = "player_state",
+            playerId = playerId,
+            position = new { x = transform.position.x, y = transform.position.y, z = transform.position.z },
+            rotation = new { x = transform.rotation.x, y = transform.rotation.y, z = transform.rotation.z, w = transform.rotation.w },
+            isRunning = _isRunning,
+            isAction = isAction,
+            currentHealth = _hp,
+            maxHealth = UserData.Instance.Character.MaxHealth,
+            attackPower = UserData.Instance.Character.AttackPower
+        };
 
-            var stateData = new
-            {
-                action = "player_state",
-                playerId = playerId,
-                position = position,
-                rotation = rotation,
-                isRunning = _isRunning,
-                isAction = isAction,
-                currentHealth = _hp,
-                maxHealth = UserData.Instance.Character.MaxHealth,
-                attackPower = UserData.Instance.Character.AttackPower
-            };
-
-            await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(stateData));
-
-            // 마지막 전송 상태 업데이트
-            lastSentPosition = transform.position;
-            lastSentRotation = transform.rotation;
-            lastSentIsRunning = _isRunning;
-            lastSentIsAction = isAction;
-        }
+        await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(stateData));
     }
 
     // 입력 처리 메서드 오버라이드
@@ -290,19 +308,20 @@ public class NetworkPlayerAnimator : playerAnimator
 
     public void UpdateState(Vector3 position, Quaternion rotation, bool isRunning, bool inAction, int currentHealth, int maxHealth, int attackPower)
     {
+        
         if (isLocalPlayer) return;
 
-        // 위치와 회전을 빠르게 반영하기 위해 보간 비율을 조정
+        // 새로운 목표 위치와 회전 설정
         targetPosition = position;
         targetRotation = rotation;
 
+        // 상태 업데이트
         _isRunning = isRunning;
         isAction = inAction;
         _hp = currentHealth;
         _str = attackPower;
 
         _animator.SetBool("isRunning", isRunning);
-
     }
 
     public void ExecuteAction(string actionName)

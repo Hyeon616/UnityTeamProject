@@ -2,8 +2,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -247,7 +245,7 @@ public class RoomMenu : MonoBehaviour
                 else
                 {
                     string errorMessage = responseData != null && responseData.ContainsKey("message") ? responseData["message"].ToString() : "서버 응답 실패";
-                    Debug.Log($"서버 응답 실패 (방 목록) : {errorMessage}");
+                   // Debug.Log($"서버 응답 실패 (방 목록) : {errorMessage}");
                 }
             }
             catch (JsonReaderException ex)
@@ -349,10 +347,10 @@ public class RoomMenu : MonoBehaviour
             };
 
             string jsonRequest = JsonConvert.SerializeObject(startGameRequest);
-            Debug.Log($"[StartGame] 요청 전송: {jsonRequest}");
+          //  Debug.Log($"[StartGame] 요청 전송: {jsonRequest}");
 
             string response = await ServerConnector.Instance.SendMessage(jsonRequest);
-            Debug.Log($"[StartGame] 응답 수신: {response}");
+          //  Debug.Log($"[StartGame] 응답 수신: {response}");
 
             var responseData = JsonConvert.DeserializeObject<Dictionary<string, object>>(response);
 
@@ -371,7 +369,7 @@ public class RoomMenu : MonoBehaviour
 
     private async Task ListenRoomState()
     {
-        Debug.Log($"[ListenRoomState] 시작 - Player ID: {UserData.Instance.UserId}");
+       // Debug.Log($"[ListenRoomState] 시작 - Player ID: {UserData.Instance.UserId}");
 
         try
         {
@@ -380,7 +378,7 @@ public class RoomMenu : MonoBehaviour
                 string message = await ServerConnector.Instance.ReadMessage();
                 if (string.IsNullOrEmpty(message)) continue;
 
-                Debug.Log($"[ListenRoomState] 받은 메시지: {message}");
+               // Debug.Log($"[ListenRoomState] 받은 메시지: {message}");
 
                 // 여러 JSON 메시지 분리
                 var messages = message.Split(new[] { "}{" }, StringSplitOptions.None)
@@ -397,15 +395,17 @@ public class RoomMenu : MonoBehaviour
                         string action = data["action"].ToString();
                         string status = data["status"]?.ToString();
 
-                        Debug.Log($"[ListenRoomState] 처리 중: Action={action}, Status={status}");
+                      //  Debug.Log($"[ListenRoomState] 처리 중: Action={action}, Status={status}");
 
                         if (status != "success") continue;
 
                         switch (action)
                         {
                             case "start_game":
-                                Debug.Log($"[ListenRoomState] 게임 시작 메시지 수신 - Player: {UserData.Instance.UserId}");
+                               // Debug.Log($"[ListenRoomState] 게임 시작 메시지 수신 - Player: {UserData.Instance.UserId}");
                                 string sceneName = data["sceneName"].ToString();
+                                var players = JsonConvert.DeserializeObject<List<string>>(data["players"].ToString());
+                                ServerConnector.Instance.SetPlayersInRoom(players);
                                 isInRoom = false;
                                 isSceneLoading = true;
                                 await LoadGameScene(sceneName);
@@ -439,7 +439,7 @@ public class RoomMenu : MonoBehaviour
     {
         try
         {
-            Debug.Log($"[LoadGameScene] 씬 로드 시작: {sceneName}");
+           // Debug.Log($"[LoadGameScene] 씬 로드 시작: {sceneName}");
 
             AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
             asyncLoad.allowSceneActivation = true;
@@ -449,7 +449,7 @@ public class RoomMenu : MonoBehaviour
                 await Task.Yield();
             }
 
-            Debug.Log($"[LoadGameScene] 씬 로드 완료: {sceneName}");
+           // Debug.Log($"[LoadGameScene] 씬 로드 완료: {sceneName}");
         }
         catch (Exception ex)
         {

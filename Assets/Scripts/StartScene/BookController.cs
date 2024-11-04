@@ -70,8 +70,9 @@ public class BookController : MonoBehaviour
         {
             
             // 튜토리얼 Scene으로 이동
-            // SceneLoader.Instance.LoadSceneAsync("TutorialScene");
-            SceneLoader.Instance.LoadSceneAsync("LobbyScene");
+             SceneLoader.Instance.LoadSceneAsync("TutorialScene");
+
+            //SceneLoader.Instance.LoadSceneAsync("LobbyScene");
         }
 
     }

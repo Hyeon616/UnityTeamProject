@@ -45,8 +45,8 @@ public class InfoView : MonoBehaviour
             jewelHPUpgradetext.text = $"-{character.HealthEnhancement}";
             coinAtkUpgradetext.text = $"-{character.AttackEnhancement * 5}";
             coinHPUpgradetext.text = $"-{character.HealthEnhancement * 5}";
-            currentatk.text = $"ATK  :  {character.AttackPower}  >";
-            currenthp.text = $"HP  :  {character.MaxHealth}  >";
+            currentatk.text = $"{character.AttackPower}";
+            currenthp.text = $"{character.MaxHealth}";
             afteratk.text = $"{character.AttackPower + 1}";
             afterhp.text = $"{character.MaxHealth + 5}";
         }

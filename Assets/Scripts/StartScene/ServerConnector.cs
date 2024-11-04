@@ -12,7 +12,18 @@ public class ServerConnector : Singleton<ServerConnector>
     public NetworkStream _stream;
     private readonly string SERVER_IP = "127.0.0.1";
     private readonly int SERVER_PORT = 7777;
-    private object _streamLock = new object();
+
+    private List<string> playersInRoom = new List<string>();
+
+    public void SetPlayersInRoom(List<string> players)
+    {
+        playersInRoom = players;
+    }
+
+    public List<string> GetPlayersInRoom()
+    {
+        return playersInRoom;
+    }
 
 
     async void Start()

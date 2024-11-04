@@ -147,7 +147,7 @@ public class playerAnimator : MonoBehaviour
                 Quaternion targetRotation = Quaternion.LookRotation(_moveDirection);
                 transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
             }
-            _characterController.Move(_moveDirection * 6f * Time.deltaTime);
+            _characterController.Move(_moveDirection * 3f * Time.deltaTime);
             _animator.SetBool("isRunning", _isRunning);
         }
         else
