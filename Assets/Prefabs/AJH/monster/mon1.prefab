@@ -47,6 +47,7 @@ GameObject:
   - component: {fileID: 3441975964715040232}
   - component: {fileID: -1010521881606547218}
   - component: {fileID: 5751449391356956251}
+  - component: {fileID: -6606994259492105571}
   m_Layer: 0
   m_Name: mon1
   m_TagString: Monster
@@ -133,6 +134,8 @@ MonoBehaviour:
   _str: 0
   animator: {fileID: 0}
   wayPoint: {fileID: 0}
+  playerTags5: []
+  randomObject: {fileID: 0}
   playerSound: {fileID: -1010521881606547218}
   monsterType: {fileID: 3441975964715040232}
 --- !u!136 &7069268878232619306
@@ -278,6 +281,25 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &-6606994259492105571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7068627753541949809}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06ce2ac1276540d45a96e2f226780a6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  flashDuration: 0.1
+  originalMaterial: {fileID: 0}
+  flashMaterial: {fileID: 0}
+  damageTextPrefab: {fileID: 0}
+  textDisplayDuration: 1
+  floatSpeed: 1
+  textOffset: {x: 0, y: 2, z: 0}
 --- !u!1 &7068665613189211625
 GameObject:
   m_ObjectHideFlags: 0

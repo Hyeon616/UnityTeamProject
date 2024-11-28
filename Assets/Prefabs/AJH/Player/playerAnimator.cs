@@ -11,36 +11,43 @@ public class playerAnimator : MonoBehaviour
     public SkillControl skill;
     public Animator _animator;
     public CharacterController _characterController;
-    private Vector3 _moveDirection;              
-    public bool _isRunning = false;             
-    public int _skillA = -1;                    
-    private int _skillB = -1;                    
-    public bool isAction = false;                
-    private float _gravity = -9.81f;             
-    private float _velocity;                     
-    private static string MyObjectName;          
-    private static string _PlayerName;           
-    public int _hp ;                      
-    private static int _level;                   
-    public int _str;                   
+    private Vector3 _moveDirection;
+    public bool _isRunning = false;
+    public int _skillA = -1;
+    private int _skillB = -1;
+    public bool isAction = false;
+    private float _gravity = -9.81f;
+    private float _velocity;
+    private static string MyObjectName;
+    private static string _PlayerName;
+    public int _hp;
+    private static int _level;
+    public int _str;
     private static bool isSkillACooldown = false;
     private static bool isSkillBCooldown = false;
-    public float dashCooldownDuration = 5f;      
-    private bool isDashCooldown = false;         
+    public float dashCooldownDuration = 5f;
+    private bool isDashCooldown = false;
     private bool canInput = true;
     private bool isKnockedBack = false;
     public GameObject attack;
 
+    public bool isLocalPlayer { get; private set; }
+
+    protected void InitializeLocalPlayer(bool local)
+    {
+        isLocalPlayer = local;
+    }
+    
     private bool bossstart;
     public bool BossStart
     {
         get { return bossstart; }
         set { bossstart = value; }
     }
-    [SerializeField] private Vector3 initialPosition; 
+    [SerializeField] private Vector3 initialPosition;
     FloatingHealthBar healthBar;
     [SerializeField]
-    private Collider WeaponCollider;           
+    private Collider WeaponCollider;
     [SerializeField] public PlayerAttackSound playerSound;
     [SerializeField]
     private Canvas _hpCanvas;
@@ -137,7 +144,7 @@ public class playerAnimator : MonoBehaviour
     {
 
         ApplyGravity();
-        if (isAction) return; 
+        if (isAction) return;
 
         bool hasControl = (_moveDirection != Vector3.zero);
         if (hasControl && !isKnockedBack)
@@ -152,7 +159,7 @@ public class playerAnimator : MonoBehaviour
         }
         else
         {
-            _animator.SetBool("isRunning", false); 
+            _animator.SetBool("isRunning", false);
         }
         if (transform.position.y < -10 && bossstart)
         {
@@ -204,7 +211,7 @@ public class playerAnimator : MonoBehaviour
     public void ApplyGravity()
     {
 
-        if (!_characterController.isGrounded) 
+        if (!_characterController.isGrounded)
         {
             _velocity += _gravity * Time.deltaTime;
         }
@@ -212,7 +219,7 @@ public class playerAnimator : MonoBehaviour
         {
             _velocity = 0f;
         }
-        _moveDirection.y = _velocity; 
+        _moveDirection.y = _velocity;
     }
 
     #region SEND_MESSAGE
@@ -233,11 +240,11 @@ public class playerAnimator : MonoBehaviour
             return;
         }
         if (skill.getSkillTimes[0] > 0) return;
-        Vector3 dashDirection = transform.forward; 
+        Vector3 dashDirection = transform.forward;
         if (playerSound != null) { playerSound.Dash(); }
 
-        float dashDistance = 5f;  
-        float dashDuration = 0.2f; 
+        float dashDistance = 5f;
+        float dashDuration = 0.2f;
 
         Vector3 dashDestination = transform.position + dashDirection * dashDistance;
         attack.transform.Find("Dash").gameObject.SetActive(true);
@@ -272,9 +279,9 @@ public class playerAnimator : MonoBehaviour
         }
         if (playerSound != null) { playerSound.SkillA(); }
 
-        
+
         _animator.SetInteger("skillA", 0);
-        _animator.Play("ChargeSkillA_Skill"); 
+        _animator.Play("ChargeSkillA_Skill");
         StartCoroutine(SkillASlashLoop());
     }
 

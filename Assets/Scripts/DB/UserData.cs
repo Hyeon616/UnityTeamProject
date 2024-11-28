@@ -28,10 +28,6 @@ public class UserData : Singleton<UserData>
 
     public event Action OnCharacterDataChanged;
 
-    private void UpdateCharacter()
-    {
-        Character = Character; 
-    }
 
     public void LoadPlayerData(string userId, CharacterData characterData)
     {
@@ -57,6 +53,7 @@ public class UserData : Singleton<UserData>
         if (responseData.TryGetValue("status", out object status) && status.ToString() == "success")
         {
             OnCharacterDataChanged?.Invoke();
+            Debug.Log("값변경");
         }
         else
         {
@@ -66,127 +63,4 @@ public class UserData : Singleton<UserData>
         
     }
 
-    #region Stat
-
-    public void JewelUpGradeATK()
-    {
-        if (Character.Gems > Character.AttackEnhancement)
-        {
-            Character.AttackPower++;
-            Character.Gems -= Character.AttackEnhancement;
-            Character.AttackEnhancement++;
-            UpdateCharacter();
-
-            SavePlayerData();
-        }
-    }
-
-    public void JewelDownGradeATK()
-    {
-        if (Character.AttackPower > 0 && Character.AttackEnhancement > 0)
-        {
-            Character.AttackPower--;
-            Character.Gems += (Character.AttackEnhancement - 1);
-            Character.AttackEnhancement--;
-            UpdateCharacter();
-
-            SavePlayerData();
-        }
-    }
-
-    public void JewelUpGradeHP()
-    {
-        if (Character.Gems > Character.HealthEnhancement * 5)
-        {
-            Character.MaxHealth += 5;
-            Character.Gems -= Character.HealthEnhancement * 5;
-            Character.HealthEnhancement++;
-            UpdateCharacter();
-
-            SavePlayerData();
-        }
-    }
-
-    public void JewelDownGradeHP()
-    {
-        if (Character.MaxHealth > 0 && Character.HealthEnhancement > 0)
-        {
-            Character.MaxHealth -= 5;
-            Character.Gems += (Character.HealthEnhancement - 1) * 5;
-            Character.HealthEnhancement--;
-            UpdateCharacter();
-
-            SavePlayerData();
-        }
-    }
-
-    public void CoinUpGradeATK()
-    {
-        if (Character.Coins > Character.AttackEnhancement * 5)
-        {
-            Character.AttackPower++;
-            Character.Coins -= Character.AttackEnhancement * 5;
-            Character.AttackEnhancement++;
-            UpdateCharacter();
-
-            SavePlayerData();
-        }
-    }
-
-    public void CoinDownGradeATK()
-    {
-        if (Character.AttackPower > 0 && Character.AttackEnhancement > 0)
-        {
-            Character.AttackPower--;
-            Character.Coins += (Character.AttackEnhancement - 1) * 5;
-            Character.AttackEnhancement--;
-            UpdateCharacter();
-
-            SavePlayerData();
-        }
-    }
-
-    public void CoinUpGradeHP()
-    {
-        if (Character.Coins > Character.HealthEnhancement * 5)
-        {
-            Character.MaxHealth += 5;
-            Character.Coins -= Character.HealthEnhancement * 5;
-            Character.HealthEnhancement++;
-            UpdateCharacter();
-
-            SavePlayerData();
-        }
-    }
-
-    public void CoinDownGradeHP()
-    {
-        if (Character.MaxHealth > 0 && Character.HealthEnhancement > 0)
-        {
-            Character.MaxHealth -= 5;
-            Character.Coins += (Character.HealthEnhancement - 1) * 5;
-            Character.HealthEnhancement--;
-            UpdateCharacter();
-
-            SavePlayerData();
-        }
-    }
-
-    public void PlusCoins()
-    {
-        Character.Coins++;
-        UpdateCharacter();
-
-        SavePlayerData();
-    }
-
-    public void PlusJewels()
-    {
-        Character.Gems++;
-        UpdateCharacter();
-
-        SavePlayerData();
-    }
-
-    #endregion
 }

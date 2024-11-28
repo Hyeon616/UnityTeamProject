@@ -586,6 +586,7 @@ GameObject:
   - component: {fileID: 2019832394}
   - component: {fileID: -1745514825054138889}
   - component: {fileID: 1849592843775277280}
+  - component: {fileID: 3936509491264502198}
   m_Layer: 0
   m_Name: mon10
   m_TagString: Monster
@@ -672,6 +673,8 @@ MonoBehaviour:
   _str: 0
   animator: {fileID: 0}
   wayPoint: {fileID: 0}
+  playerTags5: []
+  randomObject: {fileID: 0}
   playerSound: {fileID: -1745514825054138889}
   monsterType: {fileID: 0}
 --- !u!136 &-188091796565240182
@@ -818,6 +821,25 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &3936509491264502198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1355366978745300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06ce2ac1276540d45a96e2f226780a6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  flashDuration: 0.1
+  originalMaterial: {fileID: 0}
+  flashMaterial: {fileID: 0}
+  damageTextPrefab: {fileID: 0}
+  textDisplayDuration: 1
+  floatSpeed: 1
+  textOffset: {x: 0, y: 2, z: 0}
 --- !u!1 &1372462145831158
 GameObject:
   m_ObjectHideFlags: 0

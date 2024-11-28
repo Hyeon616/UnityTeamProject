@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -48,10 +49,21 @@ public class GameManager : MonoBehaviour
     }
     private async void Start()
     {
-        Debug.Log("[GameManager] Scene 시작");
+        if (SceneManager.GetActiveScene().name == "WaveField")
+        {
+            GameObject waveFieldMonster = Resources.Load("Monsters/WaveFieldMonsters") as GameObject;
+            GameObject monster = Instantiate(waveFieldMonster);
+        }
+        else if (SceneManager.GetActiveScene().name == "BossField")
+        {
+            GameObject bossFieldMonster = Resources.Load("Monsters/BossFieldMonsters") as GameObject;
+            GameObject monster = Instantiate(bossFieldMonster);
+
+        }
+            
         try
         {
-            // Scene 시작 시 4개의 프리팹 미리 생성 (spawnPoints 개수만큼)
+            // Scene 시작 시 4개의 프리팹 미리 생성
             for (int i = 0; i < spawnPoints.Count; i++)
             {
                 Vector3 spawnPosition = spawnPoints[i].position;
@@ -59,7 +71,6 @@ public class GameManager : MonoBehaviour
                 var networkPlayer = playerObject.GetComponent<NetworkPlayerAnimator>();
                 playerObject.SetActive(false);
                 playerObjects.Add(networkPlayer);
-             //   Debug.Log($"[GameManager] Created player object at index {i}");
             }
 
             isInitialized = true;
@@ -75,28 +86,25 @@ public class GameManager : MonoBehaviour
             };
 
             string jsonRequest = JsonConvert.SerializeObject(spawnRequest);
-            //Debug.Log($"[GameManager] Sending spawn request for self: {UserData.Instance.UserId}");
             await ServerConnector.Instance.SendMessage(jsonRequest);
 
-            // 다른 플레이어들의 스폰 요청도 보냄
-            var playersInRoom = ServerConnector.Instance.GetPlayersInRoom();
-            foreach (string playerId in playersInRoom)
-            {
-                // 자신은 이미 요청했으므로 스킵
-                if (playerId == UserData.Instance.UserId) continue;
+            //var playersInRoom = ServerConnector.Instance.GetPlayersInRoom();
+            //foreach (string playerId in playersInRoom)
+            //{
+                
+            //    if (playerId == UserData.Instance.UserId) continue;
 
-                var otherSpawnRequest = new
-                {
-                    action = "player_spawn",
-                    playerId = playerId,
-                    maxHealth = UserData.Instance.Character.MaxHealth,
-                    attackPower = UserData.Instance.Character.AttackPower
-                };
+            //    var otherSpawnRequest = new
+            //    {
+            //        action = "player_spawn",
+            //        playerId = playerId,
+            //        maxHealth = UserData.Instance.Character.MaxHealth,
+            //        attackPower = UserData.Instance.Character.AttackPower
+            //    };
 
-                string otherJsonRequest = JsonConvert.SerializeObject(otherSpawnRequest);
-             //   Debug.Log($"[GameManager] Sending spawn request for other player: {playerId}");
-                await ServerConnector.Instance.SendMessage(otherJsonRequest);
-            }
+            //    string otherJsonRequest = JsonConvert.SerializeObject(otherSpawnRequest);
+            //    await ServerConnector.Instance.SendMessage(otherJsonRequest);
+            //}
         }
         catch (Exception ex)
         {
@@ -151,8 +159,6 @@ public class GameManager : MonoBehaviour
         string action = data["action"].ToString();
         string status = data["status"]?.ToString();
 
-        //Debug.Log($"[NetworkMessage] Received: {action}, Status: {status}");
-        //Debug.Log($"[NetworkMessage] Full data: {JsonConvert.SerializeObject(data)}");
 
         if (status != "success")
         {
@@ -214,6 +220,11 @@ public class GameManager : MonoBehaviour
             networkPlayer._str = attackPower;
 
             players[playerId] = networkPlayer;
+            Debug.Log(ServerConnector.Instance.GetPlayersInRoom().Count);
+            Debug.Log($"UserData.Instance.UserId : {UserData.Instance.UserId}");
+            Debug.Log($"playerId : {playerId}");
+            Debug.Log($"isLocalPlayer : {isLocalPlayer}");
+            Debug.Log($"playerId : {playerId}");
 
             if (isLocalPlayer)
             {
@@ -222,8 +233,6 @@ public class GameManager : MonoBehaviour
                 OnPlayerSpawnCompleted?.Invoke();
             }
 
-        //    Debug.Log($"[PlayerSpawn] Successfully activated player {playerId}");
-         //   Debug.Log($"[PlayerSpawn] Active players: {string.Join(", ", players.Keys)}");
         }
         catch (Exception ex)
         {
@@ -271,7 +280,7 @@ public class GameManager : MonoBehaviour
     {
         try
         {
-            Debug.Log($"[PlayerState] Full data: {JsonConvert.SerializeObject(data)}");
+           // Debug.Log($"[PlayerState] Full data: {JsonConvert.SerializeObject(data)}");
 
             if (!data.ContainsKey("playerId"))
             {

@@ -408,7 +408,7 @@ public class RoomMenu : MonoBehaviour
                                 ServerConnector.Instance.SetPlayersInRoom(players);
                                 isInRoom = false;
                                 isSceneLoading = true;
-                                await LoadGameScene(sceneName);
+                                LoadGameScene(sceneName);
                                 return;
 
                             case "get_room_list":
@@ -435,21 +435,21 @@ public class RoomMenu : MonoBehaviour
 
 
 
-    private async Task LoadGameScene(string sceneName)
+    private void LoadGameScene(string sceneName)
     {
         try
         {
-           // Debug.Log($"[LoadGameScene] 씬 로드 시작: {sceneName}");
+            // Debug.Log($"[LoadGameScene] 씬 로드 시작: {sceneName}");
+            SceneLoader.Instance.LoadSceneAsync(sceneName);
+           //  AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+           // asyncLoad.allowSceneActivation = true;
 
-            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
-            asyncLoad.allowSceneActivation = true;
+           // while (!asyncLoad.isDone)
+           // {
+           //     await Task.Yield();
+           // }
 
-            while (!asyncLoad.isDone)
-            {
-                await Task.Yield();
-            }
-
-           // Debug.Log($"[LoadGameScene] 씬 로드 완료: {sceneName}");
+           //// Debug.Log($"[LoadGameScene] 씬 로드 완료: {sceneName}");
         }
         catch (Exception ex)
         {

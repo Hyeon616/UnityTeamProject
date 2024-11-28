@@ -109,6 +109,11 @@ public class isAttackStop : StateMachineBehaviour
             if (otherCollider.gameObject.tag == "Monster")
             {
                 otherCollider.GetComponent<MonsterInfo>().TakeDamage(playerAnimator.getstr);
+                if (playerAnimator.isLocalPlayer)
+                {
+                    otherCollider.GetComponent<MonsterInfo>().OnHitEffect(playerAnimator.getstr);
+                }
+
             }
             else if (otherCollider.gameObject.name == "DestroyBox")
             {
@@ -117,6 +122,10 @@ public class isAttackStop : StateMachineBehaviour
             else if (otherCollider.gameObject.tag == "Boss")
             {
                 otherCollider.GetComponent<Boss>().TakeDamage(playerAnimator.getstr);
+                if (playerAnimator.isLocalPlayer)
+                {
+                    otherCollider.GetComponent<MonsterInfo>().OnHitEffect(playerAnimator.getstr);
+                }
             }
 
             hasCollided = true;

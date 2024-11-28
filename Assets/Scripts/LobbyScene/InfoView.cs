@@ -15,22 +15,27 @@ public class InfoView : MonoBehaviour
     [SerializeField] private TextMeshProUGUI coinHPUpgradetext;
     [SerializeField] private TextMeshProUGUI PlayerNameText;
 
-    private void OnEnable()
-    {
-        UserData.Instance.OnCharacterDataChanged += UpdateUI;
-    }
+    //private void OnEnable()
+    //{
+    //    UserData.Instance.OnCharacterDataChanged += UpdateUI;
+    //}
 
-    private void OnDisable()
-    {
-        if (UserData.Instance != null)
-            UserData.Instance.OnCharacterDataChanged -= UpdateUI;
-    }
+    //private void OnDisable()
+    //{
+    //    if (UserData.Instance != null)
+    //        UserData.Instance.OnCharacterDataChanged -= UpdateUI;
+    //}
 
     private void Start()
     {
         UpdateUI();
+        UserData.Instance.OnCharacterDataChanged += UpdateUI;
     }
-
+    private void OnDestroy()
+    {
+        if (UserData.Instance != null)
+            UserData.Instance.OnCharacterDataChanged -= UpdateUI;
+    }
 
     private void UpdateUI()
     {
@@ -41,10 +46,10 @@ public class InfoView : MonoBehaviour
             PlayerNameText.text = $"{character.PlayerName}";
             cointext.text = $" {character.Coins}";
             jeweltext.text = $" {character.Gems}";
-            jewelAtkUpgradetext.text = $"-{character.AttackEnhancement}";
-            jewelHPUpgradetext.text = $"-{character.HealthEnhancement}";
-            coinAtkUpgradetext.text = $"-{character.AttackEnhancement * 5}";
-            coinHPUpgradetext.text = $"-{character.HealthEnhancement * 5}";
+            jewelAtkUpgradetext.text = $"-{character.WeaponEnhancement}";
+            jewelHPUpgradetext.text = $"-{character.ArmorEnhancement}";
+            coinAtkUpgradetext.text = $"-{character.AttackEnhancement}";
+            coinHPUpgradetext.text = $"-{character.HealthEnhancement}";
             currentatk.text = $"{character.AttackPower}";
             currenthp.text = $"{character.MaxHealth}";
             afteratk.text = $"{character.AttackPower + 1}";

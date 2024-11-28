@@ -63,7 +63,6 @@ public class LobbyMenu : MonoBehaviour
             lobbyRoomUI.SetActive(false);
         createRoomButton.gameObject.SetActive(true);
         ParticipateRoomButton.gameObject.SetActive(true);
-        backToGameStart.gameObject.SetActive(false);
     }
 
     private async void OnClickedJoinRoomUIButton()

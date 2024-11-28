@@ -153,11 +153,13 @@ public class RegisterLoginManager : MonoBehaviour
                 yield return new WaitForSeconds(1);
 
                 // 임시
-               // SceneLoader.Instance.LoadSceneAsync("LobbyScene");
+                SceneLoader.Instance.LoadSceneAsync("LobbyScene");
 
                 loginText.gameObject.SetActive(false);
                 authPanel.SetActive(false);
                 OnLoginSuccess?.Invoke();
+
+                //SceneLoader.Instance.LoadSceneAsync("LobbyScene");
             }
 
         }

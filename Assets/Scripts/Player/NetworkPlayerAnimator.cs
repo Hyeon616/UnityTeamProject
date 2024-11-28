@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+
 public class NetworkPlayerAnimator : playerAnimator
 {
+    
     public bool isLocalPlayer;
     public string playerId;
     private float lastSyncTime;
@@ -33,7 +35,7 @@ public class NetworkPlayerAnimator : playerAnimator
     private int lastSentHealth;
 
     private Vector3 velocityVector = Vector3.zero;
-    private float positionSmoothTime = 0.08f; 
+    private float positionSmoothTime = 0.08f;
     private const float MIN_DISTANCE_THRESHOLD = 0.01f;
     private float syncInterval = 0.1f; // 동기화 간격
 
@@ -69,7 +71,7 @@ public class NetworkPlayerAnimator : playerAnimator
     {
         playerId = id;
         isLocalPlayer = isLocal;
-
+        InitializeLocalPlayer(isLocalPlayer);
         // 필요한 컴포넌트들 찾아서 할당
         if (_animator == null)
             _animator = GetComponent<Animator>();
@@ -308,7 +310,7 @@ public class NetworkPlayerAnimator : playerAnimator
 
     public void UpdateState(Vector3 position, Quaternion rotation, bool isRunning, bool inAction, int currentHealth, int maxHealth, int attackPower)
     {
-        
+
         if (isLocalPlayer) return;
 
         // 새로운 목표 위치와 회전 설정
@@ -375,7 +377,7 @@ public class NetworkPlayerAnimator : playerAnimator
         _animator.Play("ChargeSkillA_Skill");
 
         // 이펙트
-         if (attack != null)
+        if (attack != null)
         {
             var slashEffect = attack.transform.Find("Slash").gameObject;
             slashEffect.SetActive(true);
@@ -402,7 +404,7 @@ public class NetworkPlayerAnimator : playerAnimator
 
         StartCoroutine(ActionTimer("SkillA_unlock 1", 2.2f));
 
-       
+
         SkillBEffectGround();
         yield return new WaitForSeconds(0.27f);
         SkillBEffectWeapon();

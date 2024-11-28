@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-//½ºÅ³ ¹ßµ¿ ½Ã Á¦ÀÏ ¸ÕÀú ½ÇÇàµÇ´Â ½ºÅ©¸³Æ® (ÀÌÀ¯´Â ¾Ö´Ï¸ŞÀÌ¼Ç ¸ğ¼Ç¿¡ ºÎÂø µÈ ½ºÅ©¸³Æ®¶ó¼­)
+//ìŠ¤í‚¬ ë°œë™ ì‹œ ì œì¼ ë¨¼ì € ì‹¤í–‰ë˜ëŠ” ìŠ¤í¬ë¦½íŠ¸ (ì´ìœ ëŠ” ì• ë‹ˆë©”ì´ì…˜ ëª¨ì…˜ì— ë¶€ì°© ëœ ìŠ¤í¬ë¦½íŠ¸ë¼ì„œ)
 public class SkillA : StateMachineBehaviour
 {
     ColliderScript weaponColliderScript;
@@ -11,20 +11,20 @@ public class SkillA : StateMachineBehaviour
 
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-//Debug.Log("½ºÅ³ ¹ßµ¿ ½Ã Ã¹ ¹øÂ°·Î ½ÇÇàµÊ");
+//Debug.Log("ìŠ¤í‚¬ ë°œë™ ì‹œ ì²« ë²ˆì§¸ë¡œ ì‹¤í–‰ë¨");
 
         playerAnimator = animator.GetComponent<playerAnimator>();
-        // ¹«±âÀÇ Äİ¶óÀÌ´õ ½ºÅ©¸³Æ®¸¦ Ã£½À´Ï´Ù.
+        // ë¬´ê¸°ì˜ ì½œë¼ì´ë” ìŠ¤í¬ë¦½íŠ¸ë¥¼ ì°¾ìŠµë‹ˆë‹¤.
         weaponColliderScript = animator.GetComponentInChildren<ColliderScript>();
 
-        // ½ºÅ³ °ø°İ »óÅÂ¿¡ ÁøÀÔÇßÀ¸¹Ç·Î isSkillAttack º¯¼ö¸¦ true·Î ¼³Á¤ÇÕ´Ï´Ù.
+        // ìŠ¤í‚¬ ê³µê²© ìƒíƒœì— ì§„ì…í–ˆìœ¼ë¯€ë¡œ isSkillAttack ë³€ìˆ˜ë¥¼ trueë¡œ ì„¤ì •í•©ë‹ˆë‹¤.
         isSkillAttack = true;
 
-        // Ãæµ¹ ÀÌº¥Æ®¸¦ Ã³¸®ÇÏ´Â ¸Ş¼­µå¸¦ ¼³Á¤ÇÕ´Ï´Ù.
+        // ì¶©ëŒ ì´ë²¤íŠ¸ë¥¼ ì²˜ë¦¬í•˜ëŠ” ë©”ì„œë“œë¥¼ ì„¤ì •í•©ë‹ˆë‹¤.
         weaponColliderScript.SkillTriggerA += OnTriggerEnterEventHandler;
     }
 
-    // ½ºÅ³ °ø°İÀÌ ³¡³ª¸é isSkillAttack º¯¼ö¸¦ false·Î ¼³Á¤ÇÕ´Ï´Ù.
+    // ìŠ¤í‚¬ ê³µê²©ì´ ëë‚˜ë©´ isSkillAttack ë³€ìˆ˜ë¥¼ falseë¡œ ì„¤ì •í•©ë‹ˆë‹¤.
     override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         isSkillAttack = false;
@@ -33,27 +33,35 @@ public class SkillA : StateMachineBehaviour
 
     private void OnTriggerEnterEventHandler(Collider otherCollider)
     {
-        Debug.Log("½ºÅ³ ¹ßµ¿ ½Ã ¼¼ ¹øÂ°·Î ½ÇÇàµÊ");
+        Debug.Log("ìŠ¤í‚¬ ë°œë™ ì‹œ ì„¸ ë²ˆì§¸ë¡œ ì‹¤í–‰ë¨");
 
-        // ½ºÅ³ °ø°İÀÎ °æ¿ì
+        // ìŠ¤í‚¬ ê³µê²©ì¸ ê²½ìš°
         if (isSkillAttack)
         {
             if(otherCollider.tag == "Monster")
             {
                 otherCollider.GetComponent<MonsterInfo>().TakeDamage(playerAnimator.getstr);
+                if (playerAnimator.isLocalPlayer)
+                {
+                    otherCollider.GetComponent<MonsterInfo>().OnHitEffect(playerAnimator.getstr);
+                }
             }
             if (otherCollider.tag == "Boss")
             {
                 
                 otherCollider.GetComponent<Boss>().TakeDamage(playerAnimator.getstr);
+                if (playerAnimator.isLocalPlayer)
+                {
+                    otherCollider.GetComponent<MonsterInfo>().OnHitEffect(playerAnimator.getstr);
+                }
             }
-            // ½ºÅ³ °ø°İ Ã³¸® ÄÚµå Ãß°¡
+            // ìŠ¤í‚¬ ê³µê²© ì²˜ë¦¬ ì½”ë“œ ì¶”ê°€
         }
         else
         {
-            // ÀÏ¹İ °ø°İÀÎ °æ¿ì
+            // ì¼ë°˜ ê³µê²©ì¸ ê²½ìš°
             Debug.Log("Normal Attack detected!");
-            // ÀÏ¹İ °ø°İ Ã³¸® ÄÚµå Ãß°¡
+            // ì¼ë°˜ ê³µê²© ì²˜ë¦¬ ì½”ë“œ ì¶”ê°€
         }
     }
 }

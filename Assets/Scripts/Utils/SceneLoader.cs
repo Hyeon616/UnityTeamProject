@@ -1,9 +1,8 @@
+using DG.Tweening;
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
-using DG.Tweening;
-using TMPro;
 
 public class SceneLoader : Singleton<SceneLoader>
 {
@@ -13,21 +12,30 @@ public class SceneLoader : Singleton<SceneLoader>
 
     public void LoadSceneAsync(string sceneName)
     {
+        loadingText.alpha = 1f;
         StartCoroutine(LoadSceneCoroutine(sceneName));
     }
 
     private IEnumerator LoadSceneCoroutine(string sceneName)
     {
-        // ·Îµù È­¸é ÆäÀÌµåÀÎ
+        // ë¡œë”© í™”ë©´ í˜ì´ë“œì¸
         loadingScreen.SetActive(true);
         loadingScreenCanvasGroup.alpha = 0;
         loadingScreenCanvasGroup.DOFade(1, 1f);
 
-        // ÅØ½ºÆ® ¾÷µ¥ÀÌÆ® ÄÚ·çÆ¾ ½ÃÀÛ
+        // í…ìŠ¤íŠ¸ ì—…ë°ì´íŠ¸ ì½”ë£¨í‹´ ì‹œì‘
         Coroutine loadingTextCoroutine = StartCoroutine(UpdateLoadingText());
 
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
         asyncLoad.allowSceneActivation = false;
+
+        float loadingTime = 0f;
+        while (loadingTime < 3f || asyncLoad.progress < 0.9f)
+        {
+            loadingTime += Time.deltaTime;
+            yield return null;
+        }
+
 
         while (!asyncLoad.isDone)
         {
@@ -38,13 +46,13 @@ public class SceneLoader : Singleton<SceneLoader>
             yield return null;
         }
 
-        // ÅØ½ºÆ® ¾÷µ¥ÀÌÆ® ÄÚ·çÆ¾ Á¾·á
+        // í…ìŠ¤íŠ¸ ì—…ë°ì´íŠ¸ ì½”ë£¨í‹´ ì¢…ë£Œ
         StopCoroutine(loadingTextCoroutine);
 
-        // ·Îµù ÅØ½ºÆ® ÆäÀÌµå¾Æ¿ô
+        // ë¡œë”© í…ìŠ¤íŠ¸ í˜ì´ë“œì•„ì›ƒ
         loadingText.DOFade(0, 1f);
 
-        // ·Îµù È­¸é ÆäÀÌµå¾Æ¿ô
+        // ë¡œë”© í™”ë©´ í˜ì´ë“œì•„ì›ƒ
         yield return loadingScreenCanvasGroup.DOFade(0, 1f).WaitForCompletion();
         loadingScreen.SetActive(false);
     }
@@ -54,11 +62,11 @@ public class SceneLoader : Singleton<SceneLoader>
         while (true)
         {
             loadingText.text = "Loading.";
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.5f);
             loadingText.text = "Loading..";
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.5f);
             loadingText.text = "Loading...";
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.5f);
         }
     }
 

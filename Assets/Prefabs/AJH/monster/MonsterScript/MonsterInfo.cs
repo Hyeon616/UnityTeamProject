@@ -1,4 +1,3 @@
-using Unity.VisualScripting;
 using UnityEngine;
 using static DataManager;
 
@@ -17,6 +16,7 @@ public class MonsterInfo : MonoBehaviour
     [SerializeField] private PlayerAttackSound playerSound;
     [SerializeField] private MonsterType monsterType; //몬스터 유형 판정 컴포넌트 따로 존재(몬스터에 부착)
 
+    private MonsterHit _monsterHit;
 
     void Awake()
     {
@@ -29,6 +29,8 @@ public class MonsterInfo : MonoBehaviour
         //가져온 정보를 함수에 넘겨서 hp,level,str 등등 세팅
         SetMonsterData(monsterData);
         //Debug.Log("1...몬스터 정보 세팅.." + _monsterName);
+
+        _monsterHit = GetComponent<MonsterHit>();
     }
     //몬스터 정보 세팅
     private void SetMonsterData(MonsterData monsterData)
@@ -62,7 +64,7 @@ public class MonsterInfo : MonoBehaviour
     }
     public void TakeDamage(int damageAmout)
     {
-        //Debug.Log($"공격 당함!!! Current Hp : {_hp}");
+        Debug.Log($"공격 당함!!! Current Hp : {_hp}");
         //Debug.Log(gameObject.name);
         _hp -= damageAmout;
         if (_hp <= 0)
@@ -76,10 +78,12 @@ public class MonsterInfo : MonoBehaviour
         }
         else
         {
-            
-            if(monsterType != null)
+
+            if (monsterType != null)
             {
                 animator.SetTrigger("damage");
+
+
                 if (monsterType.monsterType == 1)
                 {
                     playerSound.BiologyAttack();// 생물형 몬스터 타격음
@@ -92,10 +96,23 @@ public class MonsterInfo : MonoBehaviour
                 {
                     Debug.Log("타입없음");
                 }
+
+                //_monsterHit.OnHit();
+                //_monsterHit.ShowDamageText(damageAmout);
             }
             else
                 return;
-            
+
         }
     }
+
+    public void OnHitEffect(int damageAmount)
+    {
+        _monsterHit.OnHit();
+        _monsterHit.ShowDamageText(damageAmount);
+    }
+
+
+
+
 }

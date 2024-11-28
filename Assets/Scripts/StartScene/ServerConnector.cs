@@ -10,7 +10,8 @@ public class ServerConnector : Singleton<ServerConnector>
 {
     private TcpClient _tcpClient;
     public NetworkStream _stream;
-    private readonly string SERVER_IP = "127.0.0.1";
+    private readonly string SERVER_IP = "3.35.20.9";
+    //private readonly string SERVER_IP = "127.0.0.1";
     private readonly int SERVER_PORT = 7777;
 
     private List<string> playersInRoom = new List<string>();

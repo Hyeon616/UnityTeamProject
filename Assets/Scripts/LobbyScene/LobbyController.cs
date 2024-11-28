@@ -152,13 +152,14 @@ public class LobbyController : MonoBehaviour
     #region Enhancement Methods
     public void JewelUpGradeATK()
     {
-        if (UserData.Instance.Character.Gems > UserData.Instance.Character.AttackEnhancement)
+        if (UserData.Instance.Character.Gems > UserData.Instance.Character.WeaponEnhancement)
         {
             UserData.Instance.Character.AttackPower++;
-            UserData.Instance.Character.Gems -= UserData.Instance.Character.AttackEnhancement;
-            UserData.Instance.Character.AttackEnhancement++;
+            UserData.Instance.Character.Gems -= UserData.Instance.Character.WeaponEnhancement;
+            UserData.Instance.Character.WeaponEnhancement++;
             UserData.Instance.SavePlayerData();
-            Debug.Log("Jewel upgraded ATK");
+            Debug.Log($"WeaponEnhancement : {UserData.Instance.Character.WeaponEnhancement}");
+
         }
         else
         {
@@ -168,13 +169,13 @@ public class LobbyController : MonoBehaviour
 
     public void JewelDownGradeATK()
     {
-        if (UserData.Instance.Character.AttackPower > 0 && UserData.Instance.Character.AttackEnhancement > 0)
+        if (UserData.Instance.Character.AttackPower > 0 && UserData.Instance.Character.WeaponEnhancement > 0)
         {
             UserData.Instance.Character.AttackPower--;
-            UserData.Instance.Character.Gems += (UserData.Instance.Character.AttackEnhancement - 1);
-            UserData.Instance.Character.AttackEnhancement--;
+            UserData.Instance.Character.Gems += (UserData.Instance.Character.WeaponEnhancement - 1);
+            UserData.Instance.Character.WeaponEnhancement--;
             UserData.Instance.SavePlayerData();
-            Debug.Log("Jewel downgraded ATK");
+            Debug.Log($"WeaponEnhancement : {UserData.Instance.Character.WeaponEnhancement}");
         }
         else
         {
@@ -184,13 +185,13 @@ public class LobbyController : MonoBehaviour
 
     public void JewelUpGradeHP()
     {
-        if (UserData.Instance.Character.Gems > UserData.Instance.Character.HealthEnhancement * 5)
+        if (UserData.Instance.Character.Gems > UserData.Instance.Character.ArmorEnhancement * 5)
         {
             UserData.Instance.Character.MaxHealth += 5;
-            UserData.Instance.Character.Gems -= UserData.Instance.Character.HealthEnhancement * 5;
-            UserData.Instance.Character.HealthEnhancement++;
+            UserData.Instance.Character.Gems -= UserData.Instance.Character.ArmorEnhancement * 5;
+            UserData.Instance.Character.ArmorEnhancement++;
             UserData.Instance.SavePlayerData();
-            Debug.Log("Jewel upgraded HP");
+            Debug.Log($"ArmorEnhancement : {UserData.Instance.Character.ArmorEnhancement}");
         }
         else
         {
@@ -200,13 +201,13 @@ public class LobbyController : MonoBehaviour
 
     public void JewelDownGradeHP()
     {
-        if (UserData.Instance.Character.MaxHealth > 0 && UserData.Instance.Character.HealthEnhancement > 0)
+        if (UserData.Instance.Character.MaxHealth > 0 && UserData.Instance.Character.ArmorEnhancement > 0)
         {
             UserData.Instance.Character.MaxHealth -= 5;
-            UserData.Instance.Character.Gems += (UserData.Instance.Character.HealthEnhancement - 1) * 5;
-            UserData.Instance.Character.HealthEnhancement--;
+            UserData.Instance.Character.Gems += (UserData.Instance.Character.ArmorEnhancement - 1);
+            UserData.Instance.Character.ArmorEnhancement--;
             UserData.Instance.SavePlayerData();
-            Debug.Log("Jewel downgraded HP");
+            Debug.Log($"ArmorEnhancement : {UserData.Instance.Character.ArmorEnhancement}");
         }
         else
         {
@@ -216,13 +217,13 @@ public class LobbyController : MonoBehaviour
 
     public void CoinUpGradeATK()
     {
-        if (UserData.Instance.Character.Coins > UserData.Instance.Character.AttackEnhancement * 5)
+        if (UserData.Instance.Character.Coins > UserData.Instance.Character.AttackEnhancement)
         {
             UserData.Instance.Character.AttackPower++;
-            UserData.Instance.Character.Coins -= UserData.Instance.Character.AttackEnhancement * 5;
+            UserData.Instance.Character.Coins -= UserData.Instance.Character.AttackEnhancement;
             UserData.Instance.Character.AttackEnhancement++;
             UserData.Instance.SavePlayerData();
-            Debug.Log("Coin upgraded ATK");
+            Debug.Log($"AttackEnhancement : {UserData.Instance.Character.AttackEnhancement}");
         }
         else
         {
@@ -235,10 +236,10 @@ public class LobbyController : MonoBehaviour
         if (UserData.Instance.Character.AttackPower > 0 && UserData.Instance.Character.AttackEnhancement > 0)
         {
             UserData.Instance.Character.AttackPower--;
-            UserData.Instance.Character.Coins += (UserData.Instance.Character.AttackEnhancement - 1) * 5;
+            UserData.Instance.Character.Coins += (UserData.Instance.Character.AttackEnhancement - 1);
             UserData.Instance.Character.AttackEnhancement--;
             UserData.Instance.SavePlayerData();
-            Debug.Log("Coin downgraded ATK");
+            Debug.Log($"AttackEnhancement : {UserData.Instance.Character.AttackEnhancement}");
         }
         else
         {
@@ -254,7 +255,7 @@ public class LobbyController : MonoBehaviour
             UserData.Instance.Character.Coins -= UserData.Instance.Character.HealthEnhancement * 5;
             UserData.Instance.Character.HealthEnhancement++;
             UserData.Instance.SavePlayerData();
-            Debug.Log("Coin upgraded HP");
+            Debug.Log($"HealthEnhancement : {UserData.Instance.Character.HealthEnhancement}");
         }
         else
         {
@@ -267,10 +268,10 @@ public class LobbyController : MonoBehaviour
         if (UserData.Instance.Character.MaxHealth > 0 && UserData.Instance.Character.HealthEnhancement > 0)
         {
             UserData.Instance.Character.MaxHealth -= 5;
-            UserData.Instance.Character.Coins += (UserData.Instance.Character.HealthEnhancement - 1) * 5;
+            UserData.Instance.Character.Coins += (UserData.Instance.Character.HealthEnhancement - 1);
             UserData.Instance.Character.HealthEnhancement--;
             UserData.Instance.SavePlayerData();
-            Debug.Log("Coin downgraded HP");
+            Debug.Log($"HealthEnhancement : {UserData.Instance.Character.HealthEnhancement}");
         }
         else
         {
