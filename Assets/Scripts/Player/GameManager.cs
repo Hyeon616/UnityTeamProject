@@ -1,10 +1,11 @@
 using Newtonsoft.Json;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+
+
 
 public class GameManager : MonoBehaviour
 {
@@ -60,7 +61,7 @@ public class GameManager : MonoBehaviour
             GameObject monster = Instantiate(bossFieldMonster);
 
         }
-            
+
         try
         {
             // Scene 시작 시 4개의 프리팹 미리 생성
@@ -77,7 +78,7 @@ public class GameManager : MonoBehaviour
             _ = ListenNetworkMessages();
 
             // 자신의 스폰 요청을 먼저 보냄
-            var spawnRequest = new
+            var spawnRequest = new PlayerSpawnMessage
             {
                 action = "player_spawn",
                 playerId = UserData.Instance.UserId,
@@ -88,28 +89,17 @@ public class GameManager : MonoBehaviour
             string jsonRequest = JsonConvert.SerializeObject(spawnRequest);
             await ServerConnector.Instance.SendMessage(jsonRequest);
 
-            //var playersInRoom = ServerConnector.Instance.GetPlayersInRoom();
-            //foreach (string playerId in playersInRoom)
-            //{
-                
-            //    if (playerId == UserData.Instance.UserId) continue;
-
-            //    var otherSpawnRequest = new
-            //    {
-            //        action = "player_spawn",
-            //        playerId = playerId,
-            //        maxHealth = UserData.Instance.Character.MaxHealth,
-            //        attackPower = UserData.Instance.Character.AttackPower
-            //    };
-
-            //    string otherJsonRequest = JsonConvert.SerializeObject(otherSpawnRequest);
-            //    await ServerConnector.Instance.SendMessage(otherJsonRequest);
-            //}
         }
         catch (Exception ex)
         {
             Debug.LogError($"[GameManager] Start error: {ex.Message}");
         }
+    }
+
+    private void FixedUpdate()
+    {
+        
+        SendPlayerState();
     }
 
 
@@ -193,17 +183,14 @@ public class GameManager : MonoBehaviour
         {
             string playerId = data["playerId"].ToString();
             int spawnIndex = Convert.ToInt32(data["spawnIndex"]);
-            Debug.Log($"[PlayerSpawn] Processing spawn for player: {playerId} at index: {spawnIndex}");
 
             if (spawnIndex >= playerObjects.Count)
             {
-                Debug.LogError($"[PlayerSpawn] Invalid spawn index: {spawnIndex}");
                 return;
             }
 
             if (players.ContainsKey(playerId))
             {
-                Debug.Log($"[PlayerSpawn] Player {playerId} already spawned");
                 return;
             }
 
@@ -220,16 +207,11 @@ public class GameManager : MonoBehaviour
             networkPlayer._str = attackPower;
 
             players[playerId] = networkPlayer;
-            Debug.Log(ServerConnector.Instance.GetPlayersInRoom().Count);
-            Debug.Log($"UserData.Instance.UserId : {UserData.Instance.UserId}");
-            Debug.Log($"playerId : {playerId}");
-            Debug.Log($"isLocalPlayer : {isLocalPlayer}");
-            Debug.Log($"playerId : {playerId}");
 
             if (isLocalPlayer)
             {
                 LocalPlayer = networkPlayer;
-                StartCoroutine(SendPlayerState());
+                //StartCoroutine(SendPlayerState());
                 OnPlayerSpawnCompleted?.Invoke();
             }
 
@@ -240,47 +222,34 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private IEnumerator SendPlayerState()
+    private async void SendPlayerState()
     {
 
-        WaitForSeconds wait = new WaitForSeconds(0.1f);
 
-        while (isRunning && LocalPlayer != null)
+        var position = LocalPlayer.transform.position;
+        var rotation = LocalPlayer.transform.rotation;
+
+        var stateData = new PlayerStateMessage
         {
-            try
-            {
-                var position = LocalPlayer.transform.position;
-                var rotation = LocalPlayer.transform.rotation;
+            action = "player_state",
+            playerId = UserData.Instance.UserId,
+            position = new Position { x = position.x, y = position.y, z = position.z },
+            rotation = new Rotation { x = rotation.x, y = rotation.y, z = rotation.z, w = rotation.w },
+            isRunning = LocalPlayer._isRunning,
+            isAction = LocalPlayer.isAction,
+            currentHealth = LocalPlayer._hp,
+            maxHealth = UserData.Instance.Character.MaxHealth,
+            attackPower = LocalPlayer._str
+        };
 
-                var stateData = new
-                {
-                    action = "player_state",
-                    playerId = UserData.Instance.UserId,
-                    position = new { x = position.x, y = position.y, z = position.z },
-                    rotation = new { x = rotation.x, y = rotation.y, z = rotation.z, w = rotation.w },
-                    isRunning = LocalPlayer._isRunning,
-                    isAction = LocalPlayer.isAction,
-                    currentHealth = LocalPlayer._hp,
-                    maxHealth = UserData.Instance.Character.MaxHealth,
-                    attackPower = LocalPlayer._str
-                };
+        await ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(stateData));
 
-                _ = ServerConnector.Instance.SendMessage(JsonConvert.SerializeObject(stateData));
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[SendPlayerState] Error: {ex.Message}");
-            }
-
-            yield return new WaitForSeconds(0.1f);
-        }
     }
 
     private void PlayerState(Dictionary<string, object> data)
     {
         try
         {
-           // Debug.Log($"[PlayerState] Full data: {JsonConvert.SerializeObject(data)}");
 
             if (!data.ContainsKey("playerId"))
             {
@@ -306,11 +275,8 @@ public class GameManager : MonoBehaviour
             var rotationData = JsonConvert.DeserializeObject<Dictionary<string, float>>(
                 JsonConvert.SerializeObject(data["rotation"]));
 
-           // Debug.Log($"Rotation data received: {JsonConvert.SerializeObject(rotationData)}");
-
             Vector3 position = new Vector3(positionData["x"], positionData["y"], positionData["z"]);
 
-            // 회전값 명시적으로 처리
             Quaternion rotation = new Quaternion(
                 rotationData.ContainsKey("x") ? rotationData["x"] : 0f,
                 rotationData.ContainsKey("y") ? rotationData["y"] : 0f,
@@ -344,7 +310,6 @@ public class GameManager : MonoBehaviour
 
             player.UpdateState(position, rotation, isRunning, isAction, currentHealth, maxHealth, attackPower);
 
-          //  Debug.Log($"Updated player {playerId} rotation to: {rotation.eulerAngles}");
         }
         catch (Exception ex)
         {
@@ -356,7 +321,6 @@ public class GameManager : MonoBehaviour
     {
         try
         {
-            Debug.Log($"[PlayerAction] Full data: {JsonConvert.SerializeObject(data)}");
 
             string playerId = data["playerId"].ToString();
             if (playerId == UserData.Instance.UserId || !players.ContainsKey(playerId))
@@ -367,8 +331,6 @@ public class GameManager : MonoBehaviour
             var player = players[playerId];
 
             string actionName = data["actionName"].ToString();
-            Debug.Log($"[PlayerAction] actionName : {actionName}");
-
             player.ExecuteAction(actionName);
 
         }
@@ -378,3 +340,48 @@ public class GameManager : MonoBehaviour
         }
     }
 }
+
+
+public struct NetworkMessage
+{
+    public string action { get; set; }
+    public string status { get; set; }
+    public string message { get; set; }
+}
+
+public struct PlayerSpawnMessage
+{
+    public string action { get; set; }
+    public string playerId { get; set; }
+    public int maxHealth { get; set; }
+    public int attackPower { get; set; }
+}
+
+public struct PlayerStateMessage
+{
+    public string action { get; set; }
+    public string playerId { get; set; }
+    public Position position { get; set; }
+    public Rotation rotation { get; set; }
+    public bool isRunning { get; set; }
+    public bool isAction { get; set; }
+    public int currentHealth { get; set; }
+    public int maxHealth { get; set; }
+    public int attackPower { get; set; }
+}
+
+public struct Position
+{
+    public float x { get; set; }
+    public float y { get; set; }
+    public float z { get; set; }
+}
+
+public struct Rotation
+{
+    public float x { get; set; }
+    public float y { get; set; }
+    public float z { get; set; }
+    public float w { get; set; }
+}
+
